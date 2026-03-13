@@ -1,0 +1,34 @@
+package it.atm.app.nfc
+
+import android.util.Base64
+import it.atm.app.data.local.db.SubscriptionDao
+import it.atm.app.service.AccountManager
+import kotlinx.coroutines.runBlocking
+import timber.log.Timber
+import javax.inject.Inject
+import javax.inject.Singleton
+
+@Singleton
+class NfcTokenStore @Inject constructor(
+    private val accountManager: AccountManager,
+    private val subscriptionDao: SubscriptionDao
+) {
+    fun loadActiveVToken(): ByteArray? {
+        val account = accountManager.getActiveAccount() ?: return null
+        val index = account.activeNfcSubscriptionIndex
+        if (index < 0) return null
+        val subs = runBlocking { subscriptionDao.getByAccount(account.id) }
+        if (index !in subs.indices) return null
+        val b64 = subs[index].cachedDataOutBin ?: return null
+        return try {
+            Base64.decode(b64, Base64.DEFAULT)
+        } catch (_: Exception) {
+            Timber.tag("NFC").w("Failed to decode VToken data")
+            null
+        }
+    }
+
+    fun getDeviceUid(): String {
+        return accountManager.getActiveAccount()?.deviceUid ?: ""
+    }
+}
