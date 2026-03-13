@@ -1,0 +1,56 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="app_name">ATM Milano</string>
+
+    <!-- Authentication -->
+    <string name="sign_in">Sign In</string>
+    <string name="signing_in">Signing in\u2026</string>
+    <string name="sign_out">Sign Out</string>
+    <string name="login_required">Login required. Please sign in to continue.</string>
+    <string name="login_failed">Login failed. Please try again.</string>
+    <string name="session_expired">Session expired. Please sign in again.</string>
+
+    <!-- Session import/export -->
+    <string name="import_session">Import Session</string>
+    <string name="export_session">Export Session</string>
+    <string name="import_session_success">Session imported successfully.</string>
+    <string name="export_session_success">Session exported successfully.</string>
+    <string name="import_session_failed">Failed to import session.</string>
+
+    <!-- Subscriptions -->
+    <string name="subscriptions">Subscriptions</string>
+    <string name="no_subscriptions">No active subscriptions.</string>
+    <string name="syncing_subscriptions">Syncing subscriptions\u2026</string>
+    <string name="refresh">Refresh</string>
+    <string name="import_from_device">Import from device</string>
+    <string name="migrating_subscriptions">Migrating subscriptions\u2026</string>
+    <string name="migration_failed">Migration failed: %s</string>
+    <string name="import_successful">Import successful.</string>
+    <string name="valid_until">Valid until %s</string>
+
+    <!-- QR code -->
+    <string name="show_qr">Show QR</string>
+    <string name="refreshing_in">Refreshing in %ds\u2026</string>
+    <string name="no_ticket_data">No ticket data available. Go online to fetch ticket data.</string>
+
+    <!-- General -->
+    <string name="quit">Quit</string>
+    <string name="cancel">Cancel</string>
+    <string name="error">Error</string>
+    <string name="ok">OK</string>
+    <string name="offline">Offline</string>
+    <string name="online">Online</string>
+    <string name="loading">Loading\u2026</string>
+    <string name="no_internet">No internet connection.</string>
+    <string name="settings">Settings</string>
+
+    <!-- NFC -->
+    <string name="nfc_service_description">ATM Milano NFC transit validation</string>
+    <string name="nfc_aid_group_description">ATM Virtual Ticket</string>
+
+    <!-- Notification -->
+    <string name="qr_notification_channel">QR Refresh</string>
+    <string name="qr_notification_title">ATM Milano QR active</string>
+    <string name="qr_notification_text">Your subscription QR code is being refreshed.</string>
+    <string name="qr_notification_stop">Stop</string>
+</resources>
