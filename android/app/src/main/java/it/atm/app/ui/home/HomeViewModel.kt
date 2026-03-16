@@ -21,7 +21,7 @@ import it.atm.app.domain.repository.SubscriptionRepository
 import it.atm.app.domain.repository.TicketRepository
 import it.atm.app.auth.AccountManager
 import it.atm.app.auth.DuplicateAccountException
-import it.atm.app.util.AppResult
+
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
@@ -106,30 +106,25 @@ class HomeViewModel @Inject constructor(
         val token = tokenDataStore.getAccessToken() ?: return
         val deviceUid = tokenDataStore.getDeviceUid()
         restClient.syncAccount(token, deviceUid)
-        when (val result = restClient.fetchAccountProfile(token, deviceUid)) {
-            is AppResult.Success -> {
-                val p = result.data
-                _profile.value = UserProfile(
-                    name = p.name,
-                    surname = p.surname,
-                    email = p.email,
-                    confirmedEmail = p.confirmedEmail,
-                    phone = p.phone,
-                    phonePrefix = p.phonePrefix,
-                    birthDate = p.birthDate,
-                    imagePath = p.imagePath,
-                )
-                val profile = _profile.value
-                if (accountManager.getActiveAccount()?.id == AccountManager.PENDING_ACCOUNT_ID
-                    && profile.email.isNotBlank()) {
-                    accountManager.finalizePendingAccount(profile.email, profile.name, profile.surname)
-                } else {
-                    accountManager.updateActiveAccount {
-                        it.copy(name = profile.name, surname = profile.surname, email = profile.email)
-                    }
-                }
+        val p = restClient.fetchAccountProfile(token, deviceUid).getOrThrow()
+        _profile.value = UserProfile(
+            name = p.name,
+            surname = p.surname,
+            email = p.email,
+            confirmedEmail = p.confirmedEmail,
+            phone = p.phone,
+            phonePrefix = p.phonePrefix,
+            birthDate = p.birthDate,
+            imagePath = p.imagePath,
+        )
+        val profile = _profile.value
+        if (accountManager.getActiveAccount()?.id == AccountManager.PENDING_ACCOUNT_ID
+            && profile.email.isNotBlank()) {
+            accountManager.finalizePendingAccount(profile.email, profile.name, profile.surname)
+        } else {
+            accountManager.updateActiveAccount {
+                it.copy(name = profile.name, surname = profile.surname, email = profile.email)
             }
-            is AppResult.Error -> throw result.exception
         }
     }
 
@@ -158,23 +153,19 @@ class HomeViewModel @Inject constructor(
                 val token = tokenDataStore.getAccessToken()
                     ?: throw RuntimeException("Not authenticated")
                 val deviceUid = tokenDataStore.getDeviceUid()
-                when (val result = restClient.updateAccount(
+                restClient.updateAccount(
                     token, deviceUid,
                     name = updated.name,
                     surname = updated.surname,
                     phone = updated.phone,
                     phonePrefix = updated.phonePrefix,
                     birthDate = updated.birthDate
-                )) {
-                    is AppResult.Success -> {
-                        fetchAndApplyProfile()
-                        val serverProfile = _profile.value
-                        if (updated.name != serverProfile.name || updated.surname != serverProfile.surname ||
-                            updated.phone != serverProfile.phone) {
-                            _snackbar.value = SnackbarMessage("Some changes were not accepted by the server")
-                        }
-                    }
-                    is AppResult.Error -> throw result.exception
+                ).getOrThrow()
+                fetchAndApplyProfile()
+                val serverProfile = _profile.value
+                if (updated.name != serverProfile.name || updated.surname != serverProfile.surname ||
+                    updated.phone != serverProfile.phone) {
+                    _snackbar.value = SnackbarMessage("Some changes were not accepted by the server")
                 }
             } catch (e: Exception) {
                 _profile.value = previous
@@ -195,10 +186,10 @@ class HomeViewModel @Inject constructor(
                 val token = tokenDataStore.getAccessToken()
                     ?: throw RuntimeException("Not authenticated")
                 val deviceUid = tokenDataStore.getDeviceUid()
-                when (val result = subscriptionRepository.syncSubscriptions(token, deviceUid)) {
-                    is AppResult.Success -> _subscriptions.value = result.data
-                    is AppResult.Error -> _snackbar.value = SnackbarMessage(result.exception.message ?: "Sync failed")
-                }
+                subscriptionRepository.syncSubscriptions(token, deviceUid).fold(
+                    onSuccess = { _subscriptions.value = it },
+                    onFailure = { _snackbar.value = SnackbarMessage(it.message ?: "Sync failed") }
+                )
             } catch (e: Exception) {
                 _snackbar.value = SnackbarMessage(e.message ?: "Sync failed")
             } finally {
@@ -213,10 +204,9 @@ class HomeViewModel @Inject constructor(
             try {
                 val token = tokenDataStore.getAccessToken() ?: return@launch
                 val deviceUid = tokenDataStore.getDeviceUid()
-                when (val result = ticketRepository.fetchTickets(token, deviceUid)) {
-                    is AppResult.Success -> _tickets.value = result.data
-                    is AppResult.Error -> AppLogger.w("REST","Ticket fetch failed: %s", result.exception.message)
-                }
+                ticketRepository.fetchTickets(token, deviceUid)
+                    .onSuccess { _tickets.value = it }
+                    .onFailure { AppLogger.w("REST","Ticket fetch failed: %s", it.message) }
             } catch (_: Exception) {
             } finally {
                 _isTicketsLoading.value = false

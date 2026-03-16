@@ -13,7 +13,7 @@ import it.atm.app.data.remote.rest.TicketQrCodeResponse
 import it.atm.app.data.remote.rest.TicketStatus
 import it.atm.app.domain.repository.TicketRepository
 import it.atm.app.qr.BarcodeEncoder
-import it.atm.app.util.AppResult
+
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -106,15 +106,15 @@ class TicketQrViewModel @Inject constructor(
                 val token = tokenDataStore.getAccessToken()
                     ?: throw RuntimeException("Not authenticated")
                 val deviceUid = tokenDataStore.getDeviceUid()
-                when (val result = ticketRepository.validateTicket(token, deviceUid, ticket.ticketId)) {
-                    is AppResult.Success -> {
+                ticketRepository.validateTicket(token, deviceUid, ticket.ticketId).fold(
+                    onSuccess = {
                         _canValidate.value = false
                         _statusLabel.value = "Active"
                         _statusColor.value = Color(0xFF358551)
                         if (ticket.hasQrCode) fetchQrCode(ticket)
-                    }
-                    is AppResult.Error -> _error.value = "Validation failed: ${result.exception.message}"
-                }
+                    },
+                    onFailure = { e -> _error.value = "Validation failed: ${e.message}" }
+                )
             } catch (e: Exception) {
                 _error.value = "Validation failed: ${e.message}"
             } finally {
@@ -137,15 +137,15 @@ class TicketQrViewModel @Inject constructor(
                     val token = tokenDataStore.getAccessToken()
                         ?: throw RuntimeException("Not authenticated")
                     val deviceUid = tokenDataStore.getDeviceUid()
-                    when (val result = ticketRepository.fetchTicketQrCode(token, deviceUid, ticket.ticketId, ticket.activeValidationId)) {
-                        is AppResult.Success -> {
-                            renderQr(result.data)
-                            _qrMessage.value = result.data.qrCodeDescription ?: result.data.qrCodeInfoValidationMessage
+                    ticketRepository.fetchTicketQrCode(token, deviceUid, ticket.ticketId, ticket.activeValidationId).fold(
+                        onSuccess = { data ->
+                            renderQr(data)
+                            _qrMessage.value = data.qrCodeDescription ?: data.qrCodeInfoValidationMessage
+                        },
+                        onFailure = { e ->
+                            if (_qrBitmap.value == null) _error.value = "Failed to load QR code: ${e.message}"
                         }
-                        is AppResult.Error -> {
-                            if (_qrBitmap.value == null) _error.value = "Failed to load QR code: ${result.exception.message}"
-                        }
-                    }
+                    )
                 } catch (e: Exception) {
                     if (_qrBitmap.value == null) _error.value = "Failed to load QR code: ${e.message}"
                 } finally {

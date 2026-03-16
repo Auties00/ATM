@@ -13,7 +13,7 @@ import it.atm.app.domain.model.AuthStatus
 import it.atm.app.domain.repository.AuthRepository
 import it.atm.app.auth.AccountManager
 import it.atm.app.auth.DuplicateAccountException
-import it.atm.app.util.AppResult
+
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
@@ -125,14 +125,10 @@ class LoginViewModel @Inject constructor(
                 val token = tokenDataStore.getAccessToken()
                 if (token != null) {
                     val deviceUid = tokenDataStore.getDeviceUid()
-                    when (val result = restClient.fetchAccountProfile(token, deviceUid)) {
-                        is AppResult.Success -> {
-                            val profile = result.data
-                            if (profile.email.isNotBlank()) {
-                                accountManager.finalizePendingAccount(profile.email, profile.name, profile.surname)
-                            }
+                    restClient.fetchAccountProfile(token, deviceUid).getOrNull()?.let { profile ->
+                        if (profile.email.isNotBlank()) {
+                            accountManager.finalizePendingAccount(profile.email, profile.name, profile.surname)
                         }
-                        is AppResult.Error -> {}
                     }
                 }
                 authRepository.checkAuthState()

@@ -31,8 +31,14 @@ import androidx.compose.material3.NavigationBar
 import androidx.compose.material3.NavigationBarItem
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.SnackbarHost
+import androidx.compose.material3.Snackbar
 import androidx.compose.material3.SnackbarHostState
+import androidx.compose.material3.AlertDialog
+import androidx.compose.material3.Button
+import androidx.compose.material3.CircularProgressIndicator
+import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.Text
+import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.LaunchedEffect
@@ -45,6 +51,7 @@ import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
 import it.atm.app.data.remote.rest.Ticket
@@ -57,6 +64,8 @@ import it.atm.app.ui.qrcode.SubscriptionPage
 import it.atm.app.ui.qrcode.QrCodeViewModel
 import it.atm.app.ui.ticket.TicketQrScreen
 import it.atm.app.ui.ticket.TicketQrViewModel
+import net.openid.appauth.AuthorizationException
+import net.openid.appauth.AuthorizationResponse
 
 private const val BUY_TICKETS_URL = "https://giromilano.atm.it/#!/shopping"
 
@@ -217,7 +226,7 @@ fun HomeScreen(
                 .align(Alignment.BottomCenter)
                 .padding(horizontal = 16.dp, vertical = bottomBarPadding)
         ) { data ->
-            androidx.compose.material3.Snackbar(
+            Snackbar(
                 snackbarData = data,
                 shape = MaterialTheme.shapes.medium,
                 containerColor = if (isErrorSnackbar) MaterialTheme.colorScheme.errorContainer
@@ -245,15 +254,15 @@ fun HomeScreen(
         ) { result ->
             val data = result.data
             if (data != null) {
-                val response = net.openid.appauth.AuthorizationResponse.fromIntent(data)
-                val exception = net.openid.appauth.AuthorizationException.fromIntent(data)
+                val response = AuthorizationResponse.fromIntent(data)
+                val exception = AuthorizationException.fromIntent(data)
                 addAccountLoginViewModel.handleAuthResult(response, exception)
             }
         }
 
         val addAccountFilePicker = rememberLauncherForActivityResult(
             contract = ActivityResultContracts.OpenDocument()
-        ) { uri: android.net.Uri? ->
+        ) { uri: Uri? ->
             uri?.let {
                 try {
                     val json = context.contentResolver.openInputStream(it)
@@ -263,7 +272,7 @@ fun HomeScreen(
             }
         }
 
-        androidx.compose.material3.AlertDialog(
+        AlertDialog(
             onDismissRequest = {
                 showAddAccountSheet = false
                 viewModel.cancelAddAccount()
@@ -271,7 +280,7 @@ fun HomeScreen(
             title = {
                 Text(
                     text = "Add account",
-                    fontWeight = androidx.compose.ui.text.font.FontWeight.Bold
+                    fontWeight = FontWeight.Bold
                 )
             },
             text = {
@@ -280,7 +289,7 @@ fun HomeScreen(
                         modifier = Modifier.fillMaxWidth().padding(vertical = 24.dp),
                         contentAlignment = Alignment.Center
                     ) {
-                        androidx.compose.material3.CircularProgressIndicator()
+                        CircularProgressIndicator()
                     }
                 } else {
                     Column(verticalArrangement = Arrangement.spacedBy(14.dp)) {
@@ -292,7 +301,7 @@ fun HomeScreen(
                                 modifier = Modifier.fillMaxWidth()
                             )
                         }
-                        androidx.compose.material3.Button(
+                        Button(
                             onClick = {
                                 addAccountLoginViewModel.clearError()
                                 addAccountLoginViewModel.initiateLogin(context, addAccountAuthLauncher)
@@ -305,7 +314,7 @@ fun HomeScreen(
                             Text("Sign in with ATM account")
                         }
 
-                        androidx.compose.material3.OutlinedButton(
+                        OutlinedButton(
                             onClick = {
                                 addAccountLoginViewModel.clearError()
                                 addAccountFilePicker.launch(arrayOf("application/json", "*/*"))
@@ -322,7 +331,7 @@ fun HomeScreen(
             },
             confirmButton = {},
             dismissButton = {
-                androidx.compose.material3.TextButton(onClick = {
+                TextButton(onClick = {
                     showAddAccountSheet = false
                     viewModel.cancelAddAccount()
                 }) { Text("Cancel") }

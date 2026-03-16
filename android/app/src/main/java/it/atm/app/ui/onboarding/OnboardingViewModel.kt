@@ -7,7 +7,7 @@ import it.atm.app.data.local.TokenDataStore
 import it.atm.app.data.remote.rest.AtmRestClient
 import it.atm.app.data.remote.rest.CardItem
 import it.atm.app.domain.repository.SubscriptionRepository
-import it.atm.app.util.AppResult
+
 import kotlinx.coroutines.async
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -47,26 +47,25 @@ class OnboardingViewModel @Inject constructor(
                 val token = tokenDataStore.getAccessToken()
                     ?: throw RuntimeException("Not authenticated")
                 val deviceUid = tokenDataStore.getDeviceUid()
-                when (val checksResult = restClient.fetchChecks(token, deviceUid)) {
-                    is AppResult.Success -> {
-                        val carriers = checksResult.data.aepTicketsMigrationsCarriers.orEmpty()
+                restClient.fetchChecks(token, deviceUid).fold(
+                    onSuccess = { checksData ->
+                        val carriers = checksData.aepTicketsMigrationsCarriers.orEmpty()
                         if (carriers.isEmpty()) {
                             minDelay.await()
                             _uiState.update { it.copy(phase = ImportPhase.Empty) }
                         } else {
-                            val cards = when (val cardsResult = restClient.fetchUserCards(token, deviceUid, CARRIER_CODE)) {
-                                is AppResult.Success -> cardsResult.data.filter { it.valid }
-                                is AppResult.Error -> emptyList()
-                            }
+                            val cards = restClient.fetchUserCards(token, deviceUid, CARRIER_CODE)
+                                .getOrElse { emptyList() }
+                                .filter { it.valid }
                             minDelay.await()
                             _uiState.update { it.copy(phase = ImportPhase.Found, cards = cards) }
                         }
-                    }
-                    is AppResult.Error -> {
+                    },
+                    onFailure = { e ->
                         minDelay.await()
-                        _uiState.update { it.copy(phase = ImportPhase.Empty, error = checksResult.exception.message) }
+                        _uiState.update { it.copy(phase = ImportPhase.Empty, error = e.message) }
                     }
-                }
+                )
             } catch (e: Exception) {
                 minDelay.await()
                 _uiState.update { it.copy(phase = ImportPhase.Empty, error = e.message ?: "Failed to check subscriptions") }
@@ -81,10 +80,10 @@ class OnboardingViewModel @Inject constructor(
                 val token = tokenDataStore.getAccessToken()
                     ?: throw RuntimeException("Not authenticated")
                 val deviceUid = tokenDataStore.getDeviceUid()
-                when (val result = subscriptionRepository.transferSubscriptions(token, deviceUid)) {
-                    is AppResult.Success -> _uiState.update { it.copy(phase = ImportPhase.Done) }
-                    is AppResult.Error -> _uiState.update { it.copy(phase = ImportPhase.Found, error = result.exception.message ?: "Migration failed") }
-                }
+                subscriptionRepository.transferSubscriptions(token, deviceUid).fold(
+                    onSuccess = { _uiState.update { it.copy(phase = ImportPhase.Done) } },
+                    onFailure = { e -> _uiState.update { it.copy(phase = ImportPhase.Found, error = e.message ?: "Migration failed") } }
+                )
             } catch (e: Exception) {
                 _uiState.update { it.copy(phase = ImportPhase.Found, error = e.message ?: "Migration failed") }
             }

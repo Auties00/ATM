@@ -1,7 +1,7 @@
 package it.atm.app.data.remote.rest
 
 import it.atm.app.auth.AuthConstants
-import it.atm.app.util.AppResult
+
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
 import kotlinx.serialization.json.Json
@@ -48,7 +48,7 @@ class AtmRestClient @Inject constructor(
         return this
     }
 
-    suspend fun syncAccount(token: String, deviceUid: String): AppResult<Unit> = withContext(Dispatchers.IO) {
+    suspend fun syncAccount(token: String, deviceUid: String): Result<Unit> = withContext(Dispatchers.IO) {
         AppLogger.d("REST","syncAccount")
         try {
             val request = Request.Builder()
@@ -59,16 +59,16 @@ class AtmRestClient @Inject constructor(
             val response = httpClient.newCall(request).execute()
             response.use { resp ->
                 if (!resp.isSuccessful) {
-                    return@withContext AppResult.Error(RuntimeException("syncAccount failed: HTTP ${resp.code}"))
+                    return@withContext Result.failure(RuntimeException("syncAccount failed: HTTP ${resp.code}"))
                 }
-                AppResult.Success(Unit)
+                Result.success(Unit)
             }
         } catch (e: Exception) {
-            AppResult.Error(e)
+            Result.failure(e)
         }
     }
 
-    suspend fun fetchChecks(token: String, deviceUid: String): AppResult<ChecksResponse> = withContext(Dispatchers.IO) {
+    suspend fun fetchChecks(token: String, deviceUid: String): Result<ChecksResponse> = withContext(Dispatchers.IO) {
         AppLogger.d("REST","fetchChecks")
         try {
             val request = Request.Builder()
@@ -79,17 +79,17 @@ class AtmRestClient @Inject constructor(
             val response = httpClient.newCall(request).execute()
             response.use { resp ->
                 if (!resp.isSuccessful) {
-                    return@withContext AppResult.Error(RuntimeException("fetchChecks failed: HTTP ${resp.code}"))
+                    return@withContext Result.failure(RuntimeException("fetchChecks failed: HTTP ${resp.code}"))
                 }
-                val body = resp.body?.string() ?: return@withContext AppResult.Error(RuntimeException("fetchChecks: empty body"))
-                AppResult.Success(json.decodeFromString<ChecksResponse>(body))
+                val body = resp.body?.string() ?: return@withContext Result.failure(RuntimeException("fetchChecks: empty body"))
+                Result.success(json.decodeFromString<ChecksResponse>(body))
             }
         } catch (e: Exception) {
-            AppResult.Error(e)
+            Result.failure(e)
         }
     }
 
-    suspend fun fetchUserCards(token: String, deviceUid: String, carrierCode: String): AppResult<List<CardItem>> = withContext(Dispatchers.IO) {
+    suspend fun fetchUserCards(token: String, deviceUid: String, carrierCode: String): Result<List<CardItem>> = withContext(Dispatchers.IO) {
         AppLogger.d("REST","fetchUserCards carrier=%s", carrierCode)
         try {
             val requestBody = json.encodeToString(
@@ -107,22 +107,22 @@ class AtmRestClient @Inject constructor(
             val response = httpClient.newCall(request).execute()
             response.use { resp ->
                 if (!resp.isSuccessful) {
-                    return@withContext AppResult.Error(RuntimeException("fetchUserCards failed: HTTP ${resp.code}"))
+                    return@withContext Result.failure(RuntimeException("fetchUserCards failed: HTTP ${resp.code}"))
                 }
-                val body = resp.body?.string() ?: return@withContext AppResult.Error(RuntimeException("fetchUserCards: empty body"))
+                val body = resp.body?.string() ?: return@withContext Result.failure(RuntimeException("fetchUserCards: empty body"))
                 val parsed = json.decodeFromString<UserCardsResponse>(body)
                 val cards = mutableListOf<CardItem>()
                 parsed.userCards?.forEach { userCard ->
                     userCard.cardsItems?.let { cards.addAll(it) }
                 }
-                AppResult.Success(cards.toList())
+                Result.success(cards.toList())
             }
         } catch (e: Exception) {
-            AppResult.Error(e)
+            Result.failure(e)
         }
     }
 
-    suspend fun initiateMigration(token: String, deviceUid: String): AppResult<Unit> = withContext(Dispatchers.IO) {
+    suspend fun initiateMigration(token: String, deviceUid: String): Result<Unit> = withContext(Dispatchers.IO) {
         AppLogger.d("REST","initiateMigration")
         try {
             val request = Request.Builder()
@@ -135,16 +135,16 @@ class AtmRestClient @Inject constructor(
             response.use { resp ->
                 if (!resp.isSuccessful) {
                     val body = resp.body?.string().orEmpty().trim()
-                    return@withContext AppResult.Error(RuntimeException("Migration failed: HTTP ${resp.code} $body"))
+                    return@withContext Result.failure(RuntimeException("Migration failed: HTTP ${resp.code} $body"))
                 }
-                AppResult.Success(Unit)
+                Result.success(Unit)
             }
         } catch (e: Exception) {
-            AppResult.Error(e)
+            Result.failure(e)
         }
     }
 
-    suspend fun executeAepMigration(token: String, deviceUid: String, carrierCode: String): AppResult<Unit> = withContext(Dispatchers.IO) {
+    suspend fun executeAepMigration(token: String, deviceUid: String, carrierCode: String): Result<Unit> = withContext(Dispatchers.IO) {
         AppLogger.d("REST","executeAepMigration carrier=%s", carrierCode)
         try {
             val request = Request.Builder()
@@ -165,21 +165,21 @@ class AtmRestClient @Inject constructor(
                                 ?: data.errorMessage
                                 ?: data.message
                                 ?: "Unknown error ($errorCode)"
-                            return@withContext AppResult.Error(RuntimeException(message))
+                            return@withContext Result.failure(RuntimeException(message))
                         }
                     } catch (_: Exception) {}
                 }
                 if (!resp.isSuccessful) {
-                    return@withContext AppResult.Error(RuntimeException("Unknown error"))
+                    return@withContext Result.failure(RuntimeException("Unknown error"))
                 }
-                AppResult.Success(Unit)
+                Result.success(Unit)
             }
         } catch (e: Exception) {
-            AppResult.Error(e)
+            Result.failure(e)
         }
     }
 
-    suspend fun fetchTickets(token: String, deviceUid: String): AppResult<TicketsResponse> = withContext(Dispatchers.IO) {
+    suspend fun fetchTickets(token: String, deviceUid: String): Result<TicketsResponse> = withContext(Dispatchers.IO) {
         AppLogger.d("REST","fetchTickets")
         try {
             val request = Request.Builder()
@@ -190,13 +190,13 @@ class AtmRestClient @Inject constructor(
             val response = httpClient.newCall(request).execute()
             response.use { resp ->
                 if (!resp.isSuccessful) {
-                    return@withContext AppResult.Error(RuntimeException("fetchTickets failed: HTTP ${resp.code}"))
+                    return@withContext Result.failure(RuntimeException("fetchTickets failed: HTTP ${resp.code}"))
                 }
-                val body = resp.body?.string() ?: return@withContext AppResult.Error(RuntimeException("fetchTickets: empty body"))
-                AppResult.Success(json.decodeFromString<TicketsResponse>(body))
+                val body = resp.body?.string() ?: return@withContext Result.failure(RuntimeException("fetchTickets: empty body"))
+                Result.success(json.decodeFromString<TicketsResponse>(body))
             }
         } catch (e: Exception) {
-            AppResult.Error(e)
+            Result.failure(e)
         }
     }
 
@@ -205,7 +205,7 @@ class AtmRestClient @Inject constructor(
         deviceUid: String,
         ticketId: String,
         validationId: String?
-    ): AppResult<TicketQrCodeResponse> = withContext(Dispatchers.IO) {
+    ): Result<TicketQrCodeResponse> = withContext(Dispatchers.IO) {
         AppLogger.d("REST","fetchTicketQrCode ticketId=%s", ticketId)
         try {
             val path = if (validationId.isNullOrBlank()) {
@@ -221,17 +221,17 @@ class AtmRestClient @Inject constructor(
             val response = httpClient.newCall(request).execute()
             response.use { resp ->
                 if (!resp.isSuccessful) {
-                    return@withContext AppResult.Error(RuntimeException("fetchTicketQrCode failed: HTTP ${resp.code}"))
+                    return@withContext Result.failure(RuntimeException("fetchTicketQrCode failed: HTTP ${resp.code}"))
                 }
-                val body = resp.body?.string() ?: return@withContext AppResult.Error(RuntimeException("fetchTicketQrCode: empty body"))
-                AppResult.Success(json.decodeFromString<TicketQrCodeResponse>(body))
+                val body = resp.body?.string() ?: return@withContext Result.failure(RuntimeException("fetchTicketQrCode: empty body"))
+                Result.success(json.decodeFromString<TicketQrCodeResponse>(body))
             }
         } catch (e: Exception) {
-            AppResult.Error(e)
+            Result.failure(e)
         }
     }
 
-    suspend fun validateTicket(token: String, deviceUid: String, ticketId: String): AppResult<Unit> = withContext(Dispatchers.IO) {
+    suspend fun validateTicket(token: String, deviceUid: String, ticketId: String): Result<Unit> = withContext(Dispatchers.IO) {
         AppLogger.d("REST","validateTicket ticketId=%s", ticketId)
         try {
             val request = Request.Builder()
@@ -243,16 +243,16 @@ class AtmRestClient @Inject constructor(
             response.use { resp ->
                 if (!resp.isSuccessful) {
                     val errorBody = resp.body?.string().orEmpty()
-                    return@withContext AppResult.Error(RuntimeException("validateTicket failed: HTTP ${resp.code} $errorBody"))
+                    return@withContext Result.failure(RuntimeException("validateTicket failed: HTTP ${resp.code} $errorBody"))
                 }
-                AppResult.Success(Unit)
+                Result.success(Unit)
             }
         } catch (e: Exception) {
-            AppResult.Error(e)
+            Result.failure(e)
         }
     }
 
-    suspend fun fetchAccountProfile(token: String, deviceUid: String): AppResult<AccountProfileResponse> = withContext(Dispatchers.IO) {
+    suspend fun fetchAccountProfile(token: String, deviceUid: String): Result<AccountProfileResponse> = withContext(Dispatchers.IO) {
         AppLogger.d("REST","fetchAccountProfile")
         try {
             val request = Request.Builder()
@@ -264,13 +264,13 @@ class AtmRestClient @Inject constructor(
             val response = accountClient.newCall(request).execute()
             response.use { resp ->
                 if (!resp.isSuccessful) {
-                    return@withContext AppResult.Error(RuntimeException("fetchAccountProfile failed: HTTP ${resp.code}"))
+                    return@withContext Result.failure(RuntimeException("fetchAccountProfile failed: HTTP ${resp.code}"))
                 }
-                val body = resp.body?.string() ?: return@withContext AppResult.Error(RuntimeException("fetchAccountProfile: empty body"))
-                AppResult.Success(json.decodeFromString<AccountProfileResponse>(body))
+                val body = resp.body?.string() ?: return@withContext Result.failure(RuntimeException("fetchAccountProfile: empty body"))
+                Result.success(json.decodeFromString<AccountProfileResponse>(body))
             }
         } catch (e: Exception) {
-            AppResult.Error(e)
+            Result.failure(e)
         }
     }
 
@@ -282,7 +282,7 @@ class AtmRestClient @Inject constructor(
         phone: String,
         phonePrefix: String,
         birthDate: String?
-    ): AppResult<Unit> = withContext(Dispatchers.IO) {
+    ): Result<Unit> = withContext(Dispatchers.IO) {
         AppLogger.d("REST","updateAccount")
         try {
             val bodyObj = buildJsonObject {
@@ -307,12 +307,12 @@ class AtmRestClient @Inject constructor(
                             errJson.errorMessage ?: errJson.message
                         } catch (_: Exception) { null }
                     } else null
-                    return@withContext AppResult.Error(RuntimeException(message ?: "Update failed (HTTP ${resp.code})"))
+                    return@withContext Result.failure(RuntimeException(message ?: "Update failed (HTTP ${resp.code})"))
                 }
-                AppResult.Success(Unit)
+                Result.success(Unit)
             }
         } catch (e: Exception) {
-            AppResult.Error(e)
+            Result.failure(e)
         }
     }
 }

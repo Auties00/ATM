@@ -9,7 +9,7 @@ import it.atm.app.domain.model.QrConfig
 import it.atm.app.domain.model.VToken
 import it.atm.app.domain.repository.SubscriptionRepository
 import it.atm.app.auth.AccountManager
-import it.atm.app.util.AppResult
+
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.async
 import kotlinx.coroutines.coroutineScope
@@ -31,27 +31,18 @@ class SubscriptionRepositoryImpl @Inject constructor(
         private const val CARRIER_CODE = "0723"
     }
 
-    override suspend fun transferSubscriptions(token: String, deviceUid: String): AppResult<List<SubscriptionEntity>> {
+    override suspend fun transferSubscriptions(token: String, deviceUid: String): Result<List<SubscriptionEntity>> {
         AppLogger.d("SYNC","Starting transfer flow")
         return try {
             vtsSetupSession(deviceUid)
 
-            when (val r = restClient.initiateMigration(token, deviceUid)) {
-                is AppResult.Error -> throw r.exception
-                is AppResult.Success -> {}
-            }
+            restClient.initiateMigration(token, deviceUid).getOrThrow()
 
-            val checks = when (val r = restClient.fetchChecks(token, deviceUid)) {
-                is AppResult.Success -> r.data
-                is AppResult.Error -> throw r.exception
-            }
+            val checks = restClient.fetchChecks(token, deviceUid).getOrThrow()
             val carriers = checks.aepTicketsMigrationsCarriers.orEmpty()
 
             for (carrier in carriers) {
-                when (val r = restClient.executeAepMigration(token, deviceUid, carrier)) {
-                    is AppResult.Error -> throw r.exception
-                    is AppResult.Success -> {}
-                }
+                restClient.executeAepMigration(token, deviceUid, carrier).getOrThrow()
             }
 
             if (carriers.isNotEmpty()) {
@@ -61,11 +52,11 @@ class SubscriptionRepositoryImpl @Inject constructor(
             syncSubscriptions(token, deviceUid)
         } catch (e: Exception) {
             AppLogger.e("SYNC","Transfer failed: %s", e.message)
-            AppResult.Error(e)
+            Result.failure(e)
         }
     }
 
-    override suspend fun syncSubscriptions(token: String, deviceUid: String): AppResult<List<SubscriptionEntity>> =
+    override suspend fun syncSubscriptions(token: String, deviceUid: String): Result<List<SubscriptionEntity>> =
         coroutineScope {
             AppLogger.d("SYNC","Syncing subscriptions")
             try {
@@ -95,10 +86,10 @@ class SubscriptionRepositoryImpl @Inject constructor(
                 subscriptionDataStore.saveSubscriptions(accountId, subs)
                 subscriptionDataStore.saveQrConfig(qrConfig)
                 AppLogger.d("SYNC","Sync complete: %d subscriptions", subs.size)
-                AppResult.Success(subs.toList())
+                Result.success(subs.toList())
             } catch (e: Exception) {
                 AppLogger.e("SYNC","Sync failed: %s", e.message)
-                AppResult.Error(e)
+                Result.failure(e)
             }
         }
 
@@ -125,12 +116,9 @@ class SubscriptionRepositoryImpl @Inject constructor(
         token: String,
         deviceUid: String
     ) = withContext(Dispatchers.IO) {
-        when (val result = restClient.fetchUserCards(token, deviceUid, CARRIER_CODE)) {
-            is AppResult.Success -> result.data
-            is AppResult.Error -> {
-                AppLogger.w("SYNC","Failed to fetch cards: %s", result.exception.message)
-                emptyList()
-            }
+        restClient.fetchUserCards(token, deviceUid, CARRIER_CODE).getOrElse { e ->
+            AppLogger.w("SYNC","Failed to fetch cards: %s", e.message)
+            emptyList()
         }
     }
 
