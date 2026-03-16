@@ -27,7 +27,7 @@ class AccountManager @Inject constructor(
 
     suspend fun load() {
         AppLogger.d("ACCOUNT","Loading accounts")
-        val loaded = accountDao.getAll().filter { it.id != PENDING_ACCOUNT_ID }
+        val loaded = accountDao.getAll()
         _accounts.value = loaded
         if (_activeAccountId.value == null) {
             _activeAccountId.value = loaded.firstOrNull()?.id
@@ -106,6 +106,6 @@ class AccountManager @Inject constructor(
     }
 
     private suspend fun refreshCache() {
-        _accounts.value = accountDao.getAll().filter { it.id != PENDING_ACCOUNT_ID }
+        _accounts.value = accountDao.getAll()
     }
 }

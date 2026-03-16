@@ -36,17 +36,22 @@ class SubscriptionRepositoryImpl @Inject constructor(
         return try {
             vtsSetupSession(deviceUid)
 
-            restClient.initiateMigration(token, deviceUid)
+            when (val r = restClient.initiateMigration(token, deviceUid)) {
+                is AppResult.Error -> throw r.exception
+                is AppResult.Success -> {}
+            }
 
-            val checksResult = restClient.fetchChecks(token, deviceUid)
-            val checks = when (checksResult) {
-                is AppResult.Success -> checksResult.data
-                is AppResult.Error -> throw checksResult.exception
+            val checks = when (val r = restClient.fetchChecks(token, deviceUid)) {
+                is AppResult.Success -> r.data
+                is AppResult.Error -> throw r.exception
             }
             val carriers = checks.aepTicketsMigrationsCarriers.orEmpty()
 
             for (carrier in carriers) {
-                restClient.executeAepMigration(token, deviceUid, carrier)
+                when (val r = restClient.executeAepMigration(token, deviceUid, carrier)) {
+                    is AppResult.Error -> throw r.exception
+                    is AppResult.Success -> {}
+                }
             }
 
             if (carriers.isNotEmpty()) {

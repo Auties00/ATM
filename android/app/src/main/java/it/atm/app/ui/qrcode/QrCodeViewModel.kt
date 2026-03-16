@@ -192,6 +192,9 @@ class QrCodeViewModel @Inject constructor(
 
     override fun onCleared() {
         super.onCleared()
+        syncJob?.cancel()
         timerJob?.cancel()
+        _qrBitmap.value?.recycle()
+        _qrBitmap.value = null
     }
 }

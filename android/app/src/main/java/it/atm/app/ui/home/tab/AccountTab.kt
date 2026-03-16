@@ -1,6 +1,8 @@
 package it.atm.app.ui.home.tab
 
+import it.atm.app.auth.AccountManager
 import it.atm.app.domain.model.UserProfile
+import it.atm.app.ui.components.rememberShimmerBrush
 import androidx.compose.animation.core.Animatable
 import androidx.compose.animation.core.FastOutSlowInEasing
 import androidx.compose.animation.core.LinearEasing
@@ -759,6 +761,7 @@ fun AccountSwitcherPage(
             Spacer(modifier = Modifier.height(32.dp))
 
             Column(verticalArrangement = Arrangement.spacedBy(12.dp)) {
+                val shimmerBrush = rememberShimmerBrush()
                 accounts.forEachIndexed { index, account ->
                     val progress = if (index < cardAnimations.size) cardAnimations[index].value else 1f
                     val isActive = account.id == activeAccountId
@@ -766,12 +769,22 @@ fun AccountSwitcherPage(
                         alpha = progress
                         translationY = (1f - progress) * 40f
                     }) {
-                        SwipeableAccountCard(
-                            account = account,
-                            isActive = isActive,
-                            onClick = { if (!isActive) onSwitchAccount(account.id) },
-                            onSwipeDismiss = { onLogout(account.id) }
-                        )
+                        if (account.id == AccountManager.PENDING_ACCOUNT_ID) {
+                            Box(
+                                modifier = Modifier
+                                    .fillMaxWidth()
+                                    .height(88.dp)
+                                    .clip(MaterialTheme.shapes.extraLarge)
+                                    .background(shimmerBrush)
+                            )
+                        } else {
+                            SwipeableAccountCard(
+                                account = account,
+                                isActive = isActive,
+                                onClick = { if (!isActive) onSwitchAccount(account.id) },
+                                onSwipeDismiss = { onLogout(account.id) }
+                            )
+                        }
                     }
                 }
             }

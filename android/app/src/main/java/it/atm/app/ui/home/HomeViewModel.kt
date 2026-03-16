@@ -298,25 +298,29 @@ class HomeViewModel @Inject constructor(
     fun prepareAddAccount() {
         previousAccountId = accountManager.activeAccountId.value
         manualLogout = true
+        authRepository.invalidate()
         viewModelScope.launch {
             accountManager.createPendingAccount()
-            authRepository.invalidate()
         }
     }
 
     fun cancelAddAccount() {
+        manualLogout = false
         viewModelScope.launch {
             accountManager.cancelPendingAccount(previousAccountId)
             authRepository.checkAuthState()
             loadCachedSubscriptions()
             loadProfile()
+            refreshTickets()
         }
     }
 
     fun addNewAccountCompleted() {
+        manualLogout = false
         viewModelScope.launch {
             loadProfile()
             loadCachedSubscriptions()
+            refreshTickets()
         }
     }
 

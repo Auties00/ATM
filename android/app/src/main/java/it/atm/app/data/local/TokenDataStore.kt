@@ -2,6 +2,8 @@ package it.atm.app.data.local
 
 import it.atm.app.auth.AccountManager
 import it.atm.app.util.AppLogger
+import kotlinx.coroutines.sync.Mutex
+import kotlinx.coroutines.sync.withLock
 import java.util.UUID
 import javax.inject.Inject
 import javax.inject.Singleton
@@ -47,15 +49,17 @@ class TokenDataStore @Inject constructor(
 
     suspend fun getExpiresAt(): Long? = accountManager.getActiveAccount()?.expiresAt
 
-    suspend fun getDeviceUid(): String {
+    private val deviceUidMutex = Mutex()
+
+    suspend fun getDeviceUid(): String = deviceUidMutex.withLock {
         val account = accountManager.getActiveAccount()
         val existing = account?.deviceUid?.takeIf { it.isNotBlank() }
-        if (existing != null) return existing
+        if (existing != null) return@withLock existing
         val generated = UUID.randomUUID().toString().replace("-", "").substring(0, 16)
         if (account != null) {
             accountManager.updateActiveAccount { it.copy(deviceUid = generated) }
         }
-        return generated
+        generated
     }
 
     suspend fun saveDeviceUid(uid: String) {

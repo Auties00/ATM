@@ -186,5 +186,7 @@ class TicketQrViewModel @Inject constructor(
     override fun onCleared() {
         super.onCleared()
         refreshJob?.cancel()
+        _qrBitmap.value?.recycle()
+        _qrBitmap.value = null
     }
 }

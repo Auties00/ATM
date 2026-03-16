@@ -284,8 +284,19 @@ fun HomeScreen(
                     }
                 } else {
                     Column(verticalArrangement = Arrangement.spacedBy(14.dp)) {
+                        addAccountUiState.error?.let { error ->
+                            Text(
+                                text = error,
+                                color = MaterialTheme.colorScheme.error,
+                                style = MaterialTheme.typography.bodyMedium,
+                                modifier = Modifier.fillMaxWidth()
+                            )
+                        }
                         androidx.compose.material3.Button(
-                            onClick = { addAccountLoginViewModel.initiateLogin(context, addAccountAuthLauncher) },
+                            onClick = {
+                                addAccountLoginViewModel.clearError()
+                                addAccountLoginViewModel.initiateLogin(context, addAccountAuthLauncher)
+                            },
                             modifier = Modifier.fillMaxWidth().height(56.dp),
                             shape = MaterialTheme.shapes.large
                         ) {
@@ -295,7 +306,10 @@ fun HomeScreen(
                         }
 
                         androidx.compose.material3.OutlinedButton(
-                            onClick = { addAccountFilePicker.launch(arrayOf("application/json", "*/*")) },
+                            onClick = {
+                                addAccountLoginViewModel.clearError()
+                                addAccountFilePicker.launch(arrayOf("application/json", "*/*"))
+                            },
                             modifier = Modifier.fillMaxWidth().height(56.dp),
                             shape = MaterialTheme.shapes.large
                         ) {
