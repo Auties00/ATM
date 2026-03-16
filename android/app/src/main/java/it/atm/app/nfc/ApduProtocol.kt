@@ -52,9 +52,13 @@ class ApduProtocol(private val tokenStore: NfcTokenStore) {
         useAes = false
         aesKey = null
         writeBuffer.reset()
+        validationStamp = null
     }
 
     var exchangeCompleted = false
+        private set
+
+    var validationStamp: ByteArray? = null
         private set
 
     fun processCommand(apdu: ByteArray): ByteArray {
@@ -98,14 +102,20 @@ class ApduProtocol(private val tokenStore: NfcTokenStore) {
         val deviceUid = longToBytes(header.deviceUID, 8)
         val tokenSizeBytes = longToBytes(tokenSize.toLong(), 2)
 
+        // Build FCI TLV with dynamically computed lengths
+        val sdkVerLen = SDK_VERSION_SHORT.size
+        val tag53Len = 1 + 1 + tokenSizeBytes.size + 1 + 1 + sdkVerLen  // 01 01 [tokenSize] 10 01 [sdkVer]
+        val bf0cLen = 2 + deviceUid.size + 2 + tag53Len                  // C7 08 [devUid] 53 [len] [content]
+        val a5Len = 3 + bf0cLen                                          // BF0C [len] [content]
+
         val fciBody = buildByteArray {
             put(0x84); put(AID.size); put(AID)
-            put(0xA5); put(0x16)
-            put(0xBF.toByte(), 0x0C); put(0x13)
+            put(0xA5); put(a5Len)
+            put(0xBF.toByte(), 0x0C); put(bf0cLen)
             put(0xC7); put(0x08); put(deviceUid)
-            put(0x53); put(0x07); put(0x01); put(0x01)
+            put(0x53); put(tag53Len); put(0x01); put(0x01)
             put(tokenSizeBytes)
-            put(0x10); put(0x01); put(SDK_VERSION_SHORT)
+            put(0x10); put(sdkVerLen); put(SDK_VERSION_SHORT)
         }
 
         AppLogger.d(TAG,"Phase 0: SELECT OK, tokenSize=%d", tokenSize)
@@ -180,7 +190,7 @@ class ApduProtocol(private val tokenStore: NfcTokenStore) {
         val chunk = tokenBytes.extract(offset, readSize.coerceAtMost(totalSize - offset))
 
         val inner = buildByteArray { put(chunk.size); put(sessionNonce); put(chunk) }
-        var respBytes = buildByteArray { put(0x80); put(inner.size + 5); put(inner) }
+        var respBytes = buildByteArray { put(0x80); put(inner.size); put(inner) }
 
         if (useAes && aesKey != null) {
             respBytes = encryptPhase2Response(respBytes)
@@ -232,6 +242,7 @@ class ApduProtocol(private val tokenStore: NfcTokenStore) {
 
         if (completionFlag == 1) {
             exchangeCompleted = true
+            validationStamp = writeBuffer.toByteArray()
             AppLogger.d(TAG,"Phase 3: WRITE complete, stamp=%d bytes", writeBuffer.size())
         } else {
             AppLogger.d(TAG,"Phase 3: WRITE partial, offset=%d, size=%d", writeOffset, writeData.size)

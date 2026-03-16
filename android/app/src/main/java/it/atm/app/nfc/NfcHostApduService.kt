@@ -27,6 +27,7 @@ class NfcHostApduService : HostApduService() {
     override fun processCommandApdu(commandApdu: ByteArray, extras: Bundle?): ByteArray {
         val response = protocol.processCommand(commandApdu)
         if (protocol.exchangeCompleted) {
+            protocol.validationStamp?.let { tokenStore.saveValidationStamp(it) }
             AppLogger.d("NFC","NFC exchange completed, broadcasting")
             sendBroadcast(Intent(ACTION_EXCHANGE_COMPLETE).setPackage(packageName))
         }

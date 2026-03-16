@@ -31,4 +31,16 @@ class NfcTokenStore @Inject constructor(
     fun getDeviceUid(): String {
         return accountManager.getActiveAccount()?.deviceUid ?: ""
     }
+
+    fun saveValidationStamp(stamp: ByteArray) {
+        val account = accountManager.getActiveAccount() ?: return
+        val index = account.activeNfcSubscriptionIndex
+        if (index < 0) return
+        val subs = runBlocking { subscriptionDao.getByAccount(account.id) }
+        if (index !in subs.indices) return
+        val sub = subs[index]
+        if (sub.vtokenUid.isBlank()) return
+        val b64 = Base64.encodeToString(stamp, Base64.NO_WRAP)
+        runBlocking { subscriptionDao.updateDataOutBin(account.id, sub.vtokenUid, b64) }
+    }
 }

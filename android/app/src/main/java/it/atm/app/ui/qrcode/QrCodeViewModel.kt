@@ -11,6 +11,7 @@ import it.atm.app.data.remote.vts.VtsSoapClient
 import it.atm.app.qr.BarcodeEncoder
 import it.atm.app.qr.QrPayloadBuilder
 import it.atm.app.auth.AccountManager
+import it.atm.app.qr.QrConstants
 import it.atm.app.util.DateFormatter
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.delay
@@ -104,7 +105,7 @@ class QrCodeViewModel @Inject constructor(
 
         val cachedConfig = subscriptionDataStore.getQrConfig()
         sigType = cachedConfig.sigType
-        keyId = cachedConfig.initialKeyId
+        keyId = cachedConfig.initialKeyId.coerceIn(0, QrConstants.KEY_COUNT - 1)
         qrCodeFormat = cachedConfig.qrCodeFormat
 
         try {
@@ -115,7 +116,7 @@ class QrCodeViewModel @Inject constructor(
                 vtsSoapClient.getClientInfo(sessionId)
 
                 sigType = freshQrConfig.sigType
-                keyId = freshQrConfig.initialKeyId
+                keyId = freshQrConfig.initialKeyId.coerceIn(0, QrConstants.KEY_COUNT - 1)
                 qrCodeFormat = freshQrConfig.qrCodeFormat
                 subscriptionDataStore.saveQrConfig(freshQrConfig)
 
@@ -129,9 +130,7 @@ class QrCodeViewModel @Inject constructor(
                     if (!freshB64.isNullOrBlank()) {
                         tokenData = Base64.decode(freshB64, Base64.DEFAULT)
                         dataB64 = freshB64
-                        account?.id?.let { accountId ->
-                            subscriptionDataStore.updateCachedData(accountId, vtokenUid, freshB64)
-                        }
+                        subscriptionDataStore.updateCachedData(account.id, vtokenUid, freshB64)
                     }
                 }
 
@@ -162,6 +161,7 @@ class QrCodeViewModel @Inject constructor(
                     _secondsRemaining.value = remaining
                     delay(1000L)
                 }
+                keyId = (keyId + 1) % QrConstants.KEY_COUNT
             }
         }
     }

@@ -11,6 +11,7 @@ object QrSignatureEngine {
     private val aesCipher = ThreadLocal.withInitial { Cipher.getInstance("AES/CBC/NoPadding") }
 
     fun makeSignature(data: ByteArray, sigType: Int, keyId: Int): ByteArray {
+        require(keyId in QrConstants.QR_KEYS.indices) { "keyId $keyId out of range 0..${QrConstants.QR_KEYS.size - 1}" }
         val baseLen = if (data.size >= 6) data.size - 6 else data.size
         val signed = ByteArray(baseLen + 2)
         data.copyInto(signed, endIndex = baseLen)
