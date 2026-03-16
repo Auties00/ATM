@@ -8,10 +8,10 @@ import kotlinx.serialization.json.Json
 
 @Serializable
 data class AuthBlock(
-    @SerialName("access_token") val accessToken: String?,
-    @SerialName("refresh_token") val refreshToken: String?,
-    @SerialName("token_type") val tokenType: String?,
-    @SerialName("expires_at") val expiresAt: Long?
+    @SerialName("access_token") val accessToken: String? = null,
+    @SerialName("refresh_token") val refreshToken: String? = null,
+    @SerialName("token_type") val tokenType: String? = null,
+    @SerialName("expires_at") val expiresAt: Double? = null
 )
 
 @Serializable
@@ -36,10 +36,10 @@ data class SessionSubscription(
 @Serializable
 data class SessionJson(
     @SerialName("version") val version: Int = 1,
-    @SerialName("auth") val auth: AuthBlock?,
-    @SerialName("device_uid") val deviceUid: String?,
-    @SerialName("subscriptions") val subscriptions: List<SessionSubscription>,
-    @SerialName("last_sync") val lastSync: String?
+    @SerialName("auth") val auth: AuthBlock? = null,
+    @SerialName("device_uid") val deviceUid: String? = null,
+    @SerialName("subscriptions") val subscriptions: List<SessionSubscription> = emptyList(),
+    @SerialName("last_sync") val lastSync: String? = null
 ) {
     fun toJson(): String = Json.encodeToString(serializer(), this)
 

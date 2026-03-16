@@ -129,6 +129,9 @@ class QrCodeViewModel @Inject constructor(
                     if (!freshB64.isNullOrBlank()) {
                         tokenData = Base64.decode(freshB64, Base64.DEFAULT)
                         dataB64 = freshB64
+                        account?.id?.let { accountId ->
+                            subscriptionDataStore.updateCachedData(accountId, vtokenUid, freshB64)
+                        }
                     }
                 }
 

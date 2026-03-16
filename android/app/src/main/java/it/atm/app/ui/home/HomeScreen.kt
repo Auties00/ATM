@@ -1,6 +1,6 @@
 package it.atm.app.ui.home
 
-import android.content.Intent
+import androidx.browser.customtabs.CustomTabsIntent
 import android.net.Uri
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
@@ -64,6 +64,7 @@ import it.atm.app.ui.qrcode.SubscriptionPage
 import it.atm.app.ui.qrcode.QrCodeViewModel
 import it.atm.app.ui.ticket.TicketQrScreen
 import it.atm.app.ui.ticket.TicketQrViewModel
+import it.atm.app.auth.AccountManager
 import net.openid.appauth.AuthorizationException
 import net.openid.appauth.AuthorizationResponse
 
@@ -90,7 +91,12 @@ fun HomeScreen(
     val snackbarHostState = remember { SnackbarHostState() }
     var selectedTab by rememberSaveable { mutableIntStateOf(0) }
     var showAddAccountSheet by remember { mutableStateOf(false) }
+    val addAccountReady by viewModel.addAccountReady.collectAsState()
     var showAccountSwitcher by remember { mutableStateOf(false) }
+
+    LaunchedEffect(addAccountReady) {
+        if (addAccountReady) showAddAccountSheet = true
+    }
     var showQrForIndex by remember { mutableStateOf<Int?>(null) }
     var showTicketDetail by remember { mutableStateOf<Ticket?>(null) }
 
@@ -166,9 +172,8 @@ fun HomeScreen(
                     )
                     1 -> ExtendedFloatingActionButton(
                         onClick = {
-                            context.startActivity(
-                                Intent(Intent.ACTION_VIEW, Uri.parse(BUY_TICKETS_URL))
-                            )
+                            CustomTabsIntent.Builder().build()
+                                .launchUrl(context, Uri.parse(BUY_TICKETS_URL))
                         },
                         icon = { Icon(Icons.Outlined.ShoppingCart, contentDescription = null) },
                         text = { Text("Buy Tickets") },
@@ -208,10 +213,7 @@ fun HomeScreen(
                     onUpdateProfile = { updated -> viewModel.updateProfile(updated) },
                     onLogout = { accountId -> viewModel.removeAccount(accountId) },
                     onSwitchAccount = { accountId -> viewModel.switchAccount(accountId) },
-                    onAddAccount = {
-                        viewModel.prepareAddAccount()
-                        showAddAccountSheet = true
-                    },
+                    onAddAccount = { viewModel.prepareAddAccount() },
                     onShowAccountSwitcher = { showAccountSwitcher = true },
                     onRefresh = { viewModel.refreshProfile() },
                     modifier = Modifier.padding(paddingValues)
@@ -238,7 +240,7 @@ fun HomeScreen(
     }
 
     if (showAddAccountSheet) {
-        val addAccountLoginViewModel: LoginViewModel = hiltViewModel(key = "add_account_login")
+        val addAccountLoginViewModel: LoginViewModel = hiltViewModel(key = "add_account_${viewModel.addAccountKey}")
         val addAccountUiState by addAccountLoginViewModel.uiState.collectAsState()
 
         LaunchedEffect(addAccountUiState.isAuthenticated) {
@@ -246,6 +248,16 @@ fun HomeScreen(
                 showAddAccountSheet = false
                 showAccountSwitcher = false
                 viewModel.addNewAccountCompleted()
+            }
+        }
+
+        LaunchedEffect(addAccountUiState.error) {
+            addAccountUiState.error?.let { error ->
+                addAccountLoginViewModel.clearError()
+                showAddAccountSheet = false
+                showAccountSwitcher = false
+                viewModel.cancelAddAccount()
+                viewModel.showSnackbar(error)
             }
         }
 
@@ -293,14 +305,6 @@ fun HomeScreen(
                     }
                 } else {
                     Column(verticalArrangement = Arrangement.spacedBy(14.dp)) {
-                        addAccountUiState.error?.let { error ->
-                            Text(
-                                text = error,
-                                color = MaterialTheme.colorScheme.error,
-                                style = MaterialTheme.typography.bodyMedium,
-                                modifier = Modifier.fillMaxWidth()
-                            )
-                        }
                         Button(
                             onClick = {
                                 addAccountLoginViewModel.clearError()
@@ -367,16 +371,15 @@ fun HomeScreen(
     }
 
     if (showAccountSwitcher) {
+        val switcherActiveId = if (activeAccountId == AccountManager.PENDING_ACCOUNT_ID)
+            viewModel.previousAccountId else activeAccountId
         AccountSwitcherPage(
-            accounts = accounts,
-            activeAccountId = activeAccountId,
+            accounts = accounts.filter { it.id != AccountManager.PENDING_ACCOUNT_ID },
+            activeAccountId = switcherActiveId,
             onDismiss = { showAccountSwitcher = false },
             onLogout = { id -> showAccountSwitcher = false; viewModel.removeAccount(id) },
             onSwitchAccount = { id -> showAccountSwitcher = false; viewModel.switchAccount(id) },
-            onAddAccount = {
-                viewModel.prepareAddAccount()
-                showAddAccountSheet = true
-            }
+            onAddAccount = { viewModel.prepareAddAccount() }
         )
     }
 }

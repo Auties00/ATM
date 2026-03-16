@@ -117,7 +117,7 @@ class LoginViewModel @Inject constructor(
                             accessToken = a.accessToken,
                             refreshToken = a.refreshToken,
                             tokenType = a.tokenType ?: "Bearer",
-                            expiresAt = a.expiresAt ?: (System.currentTimeMillis() + 3_600_000L)
+                            expiresAt = a.expiresAt?.toLong() ?: (System.currentTimeMillis() + 3_600_000L)
                         )
                     }
                 }
@@ -132,6 +132,7 @@ class LoginViewModel @Inject constructor(
                     }
                 }
                 authRepository.checkAuthState()
+                _uiState.update { it.copy(isLoading = false) }
             } catch (e: DuplicateAccountException) {
                 _uiState.update { it.copy(isLoading = false, error = e.message ?: "Account already exists") }
             } catch (_: Exception) {

@@ -226,7 +226,7 @@ class HomeViewModel @Inject constructor(
                         accessToken = tokenDataStore.getAccessToken(),
                         refreshToken = tokenDataStore.getRefreshToken(),
                         tokenType = tokenDataStore.getTokenType(),
-                        expiresAt = tokenDataStore.getExpiresAt()
+                        expiresAt = tokenDataStore.getExpiresAt()?.toDouble()
                     ),
                     deviceUid = try { tokenDataStore.getDeviceUid() } catch (_: Exception) { null },
                     subscriptions = subs.map { s ->
@@ -283,18 +283,29 @@ class HomeViewModel @Inject constructor(
         }
     }
 
-    private var previousAccountId: String? = null
+    var previousAccountId: String? = null
+        private set
+    private var _addAccountKey = 0
+
+    private val _addAccountReady = MutableStateFlow(false)
+    val addAccountReady: StateFlow<Boolean> = _addAccountReady.asStateFlow()
+
+    val addAccountKey: Int get() = _addAccountKey
 
     fun prepareAddAccount() {
+        _addAccountReady.value = false
         previousAccountId = accountManager.activeAccountId.value
         manualLogout = true
-        authRepository.invalidate()
+        _addAccountKey++
         viewModelScope.launch {
             accountManager.createPendingAccount()
+            authRepository.invalidate()
+            _addAccountReady.value = true
         }
     }
 
     fun cancelAddAccount() {
+        _addAccountReady.value = false
         manualLogout = false
         viewModelScope.launch {
             accountManager.cancelPendingAccount(previousAccountId)
@@ -306,12 +317,22 @@ class HomeViewModel @Inject constructor(
     }
 
     fun addNewAccountCompleted() {
+        _addAccountReady.value = false
         manualLogout = false
         viewModelScope.launch {
-            loadProfile()
+            try {
+                fetchAndApplyProfile()
+            } catch (_: DuplicateAccountException) {
+                _snackbar.value = SnackbarMessage("Account already exists")
+            } catch (_: Exception) {}
             loadCachedSubscriptions()
+            refresh()
             refreshTickets()
         }
+    }
+
+    fun showSnackbar(message: String, isError: Boolean = true) {
+        _snackbar.value = SnackbarMessage(message, isError)
     }
 
     fun clearSnackbar() { _snackbar.value = null }

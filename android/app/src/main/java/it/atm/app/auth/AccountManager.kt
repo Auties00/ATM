@@ -41,7 +41,11 @@ class AccountManager @Inject constructor(
 
     suspend fun addOrUpdateAccount(account: AccountEntity) {
         AppLogger.d("ACCOUNT","Upsert account id=%s", account.id)
-        accountDao.upsert(account)
+        if (accountDao.getById(account.id) != null) {
+            accountDao.update(account)
+        } else {
+            accountDao.upsert(account)
+        }
         if (account.id != PENDING_ACCOUNT_ID) {
             accountDao.deleteById(PENDING_ACCOUNT_ID)
         }

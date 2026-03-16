@@ -9,10 +9,10 @@ import kotlinx.coroutines.flow.Flow
 
 @Dao
 interface AccountDao {
-    @Query("SELECT * FROM accounts")
+    @Query("SELECT * FROM accounts ORDER BY id")
     fun observeAll(): Flow<List<AccountEntity>>
 
-    @Query("SELECT * FROM accounts")
+    @Query("SELECT * FROM accounts ORDER BY id")
     suspend fun getAll(): List<AccountEntity>
 
     @Query("SELECT * FROM accounts WHERE id = :id")

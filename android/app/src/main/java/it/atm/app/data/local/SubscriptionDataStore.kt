@@ -34,6 +34,10 @@ class SubscriptionDataStore @Inject constructor(
         }
     }
 
+    suspend fun updateCachedData(accountId: String, vtokenUid: String, dataOutBin: String) {
+        subscriptionDao.updateDataOutBin(accountId, vtokenUid, dataOutBin)
+    }
+
     suspend fun getSubscriptionsForAccount(accountId: String): List<SubscriptionEntity> {
         return subscriptionDao.getByAccount(accountId)
     }

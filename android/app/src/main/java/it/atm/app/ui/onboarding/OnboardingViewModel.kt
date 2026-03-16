@@ -17,7 +17,7 @@ import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
 import javax.inject.Inject
 
-enum class ImportPhase { Idle, Searching, Found, Empty, Transferring, Done }
+enum class ImportPhase { Idle, Searching, Found, Empty, Transferring, Done, Failed }
 
 data class OnboardingUiState(
     val phase: ImportPhase = ImportPhase.Idle,
@@ -82,10 +82,10 @@ class OnboardingViewModel @Inject constructor(
                 val deviceUid = tokenDataStore.getDeviceUid()
                 subscriptionRepository.transferSubscriptions(token, deviceUid).fold(
                     onSuccess = { _uiState.update { it.copy(phase = ImportPhase.Done) } },
-                    onFailure = { e -> _uiState.update { it.copy(phase = ImportPhase.Found, error = e.message ?: "Migration failed") } }
+                    onFailure = { e -> _uiState.update { it.copy(phase = ImportPhase.Failed, error = e.message ?: "Migration failed") } }
                 )
             } catch (e: Exception) {
-                _uiState.update { it.copy(phase = ImportPhase.Found, error = e.message ?: "Migration failed") }
+                _uiState.update { it.copy(phase = ImportPhase.Failed, error = e.message ?: "Migration failed") }
             }
         }
     }

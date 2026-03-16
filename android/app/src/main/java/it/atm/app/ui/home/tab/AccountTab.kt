@@ -702,7 +702,7 @@ fun AccountSwitcherPage(
     val headerAlpha = remember { Animatable(0f) }
     val buttonsAlpha = remember { Animatable(0f) }
 
-    LaunchedEffect(Unit) {
+    LaunchedEffect(accounts.size) {
         launch { headerAlpha.animateTo(1f, tween(400)) }
         cardAnimations.forEachIndexed { index, anim ->
             launch {
