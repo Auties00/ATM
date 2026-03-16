@@ -18,8 +18,6 @@ import it.atm.app.ui.login.LoginScreen
 import it.atm.app.ui.login.LoginViewModel
 import it.atm.app.ui.onboarding.OnboardingScreen
 import it.atm.app.ui.onboarding.OnboardingViewModel
-import javax.inject.Inject
-
 @Composable
 fun NavGraph(
     navController: NavHostController = rememberNavController(),
