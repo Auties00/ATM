@@ -17,13 +17,13 @@ object QrSignatureEngine {
         signed[baseLen] = (sigType and 0xFF).toByte()
         signed[baseLen + 1] = (keyId and 0xFF).toByte()
 
-        val digest = sha1.get()
+        val digest = sha1.get()!!
         digest.reset()
         val sha1Bytes = digest.digest(signed)
         val padded = ByteArray(32) { 0x1A.toByte() }
         sha1Bytes.copyInto(padded, endIndex = sha1Bytes.size.coerceAtMost(32))
 
-        val cipher = aesCipher.get()
+        val cipher = aesCipher.get()!!
         cipher.init(Cipher.ENCRYPT_MODE, SecretKeySpec(QrConstants.QR_KEYS[keyId], "AES"), IvParameterSpec(QrConstants.QR_IV))
         val encrypted = cipher.doFinal(padded)
 

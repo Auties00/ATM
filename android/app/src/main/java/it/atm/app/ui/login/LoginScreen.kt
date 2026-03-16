@@ -14,6 +14,7 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.automirrored.outlined.Login
 import androidx.compose.material.icons.outlined.FileOpen
 import androidx.compose.material.icons.outlined.Login
 import androidx.compose.material.icons.rounded.DirectionsTransit
@@ -147,7 +148,7 @@ fun LoginScreen(
                             enabled = !uiState.isLoading,
                             shape = MaterialTheme.shapes.large
                         ) {
-                            Icon(Icons.Outlined.Login, null, Modifier.size(ButtonDefaults.IconSize))
+                            Icon(Icons.AutoMirrored.Outlined.Login, null, Modifier.size(ButtonDefaults.IconSize))
                             Spacer(Modifier.width(ButtonDefaults.IconSpacing))
                             Text("Sign in with ATM account", style = MaterialTheme.typography.labelLarge)
                         }

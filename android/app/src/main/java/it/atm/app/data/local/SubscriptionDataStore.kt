@@ -10,6 +10,7 @@ import kotlinx.coroutines.flow.flatMapLatest
 import kotlinx.coroutines.flow.flowOf
 import kotlinx.coroutines.flow.map
 import it.atm.app.util.AppLogger
+import kotlinx.coroutines.ExperimentalCoroutinesApi
 import javax.inject.Inject
 import javax.inject.Singleton
 
@@ -25,6 +26,7 @@ class SubscriptionDataStore @Inject constructor(
         accountManager.updateActiveAccount { it.copy(lastSync = DateFormatter.nowIso()) }
     }
 
+    @OptIn(ExperimentalCoroutinesApi::class)
     fun getSubscriptions(): Flow<List<SubscriptionEntity>> {
         return accountManager.activeAccountId.flatMapLatest { activeId ->
             if (activeId == null) flowOf(emptyList())
