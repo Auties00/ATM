@@ -6,7 +6,6 @@ import it.atm.app.qr.QrPayloadBuilder
 import it.atm.app.util.buildByteArray
 import it.atm.app.util.bytesToInt
 import it.atm.app.util.extract
-import it.atm.app.util.hexToBytes
 import it.atm.app.util.longToBytes
 import it.atm.app.util.AppLogger
 import java.io.ByteArrayOutputStream
@@ -18,7 +17,8 @@ class ApduProtocol(private val tokenStore: NfcTokenStore) {
 
     companion object {
         private const val TAG = "NFC"
-        private val AID = "A0000007874145502E4E4643422E5654".hexToBytes()
+        @OptIn(ExperimentalStdlibApi::class)
+        private val AID = "A0000007874145502E4E4643422E5654".hexToByteArray()
         private const val MAX_CHUNK_PLAINTEXT = 248
         private const val MAX_CHUNK_AES = 235
         private val SW_OK = byteArrayOf(0x90.toByte(), 0x00)
@@ -147,7 +147,7 @@ class ApduProtocol(private val tokenStore: NfcTokenStore) {
         phase = 1
 
         AppLogger.d(TAG,"Phase 1: NEGOTIATE OK, cipher=%s", if (useAes) "AES" else "plaintext")
-        return byteArrayOf(0x80.toByte(), 0x12, 0x03, 0x01) + SW_OK
+        return buildByteArray { put(0x80.toByte(), 0x12, 0x03, 0x01); put(SW_OK) }
     }
 
     private fun handlePhase2(request: ApduRequest): ByteArray {
@@ -187,7 +187,7 @@ class ApduProtocol(private val tokenStore: NfcTokenStore) {
         }
 
         AppLogger.d(TAG,"Phase 2: READ offset=%d size=%d/%d", offset, chunk.size, totalSize)
-        return respBytes + SW_OK
+        return buildByteArray { put(respBytes); put(SW_OK) }
     }
 
     private fun handlePhase3(request: ApduRequest): ByteArray {

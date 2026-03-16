@@ -6,7 +6,6 @@ import dagger.hilt.android.qualifiers.ApplicationContext
 import it.atm.app.data.local.TokenDataStore
 import it.atm.app.domain.model.AuthStatus
 import it.atm.app.domain.repository.AuthRepository
-import it.atm.app.util.toHex
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
@@ -182,6 +181,7 @@ class AuthRepositoryImpl @Inject constructor(
     private fun generateNonce(): String {
         val bytes = ByteArray(16)
         SecureRandom().nextBytes(bytes)
-        return bytes.toHex()
+        @OptIn(ExperimentalStdlibApi::class)
+        return bytes.toHexString()
     }
 }

@@ -4,7 +4,6 @@ import android.util.Base64
 import it.atm.app.auth.AuthConstants
 import it.atm.app.domain.model.QrConfig
 import it.atm.app.domain.model.VToken
-import it.atm.app.util.toHex
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
 import kotlinx.serialization.json.Json
@@ -241,7 +240,7 @@ class VtsSoapClient @Inject constructor(
             Json.parseToJsonElement(payload).jsonObject["sub"]?.jsonPrimitive?.content
         } catch (_: Exception) { null } ?: return ""
         val md5 = java.security.MessageDigest.getInstance("MD5").digest(sub.toByteArray())
-        return "${md5.toHex()}@mooney.it"
+        return "${@OptIn(ExperimentalStdlibApi::class) md5.toHexString()}@mooney.it"
     }
 
     suspend fun getDevices(sessionId: String): String = withContext(Dispatchers.IO) {
