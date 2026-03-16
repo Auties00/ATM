@@ -8,14 +8,14 @@ import it.atm.app.data.remote.vts.VtsSoapClient
 import it.atm.app.domain.model.QrConfig
 import it.atm.app.domain.model.VToken
 import it.atm.app.domain.repository.SubscriptionRepository
-import it.atm.app.service.AccountManager
+import it.atm.app.auth.AccountManager
 import it.atm.app.util.AppResult
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.async
 import kotlinx.coroutines.coroutineScope
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.withContext
-import timber.log.Timber
+import it.atm.app.util.AppLogger
 import javax.inject.Inject
 import javax.inject.Singleton
 
@@ -32,7 +32,7 @@ class SubscriptionRepositoryImpl @Inject constructor(
     }
 
     override suspend fun transferSubscriptions(token: String, deviceUid: String): AppResult<List<SubscriptionEntity>> {
-        Timber.tag("SYNC").d("Starting transfer flow")
+        AppLogger.d("SYNC","Starting transfer flow")
         return try {
             vtsSetupSession(deviceUid)
 
@@ -55,14 +55,14 @@ class SubscriptionRepositoryImpl @Inject constructor(
 
             syncSubscriptions(token, deviceUid)
         } catch (e: Exception) {
-            Timber.tag("SYNC").e("Transfer failed: %s", e.message)
+            AppLogger.e("SYNC","Transfer failed: %s", e.message)
             AppResult.Error(e)
         }
     }
 
     override suspend fun syncSubscriptions(token: String, deviceUid: String): AppResult<List<SubscriptionEntity>> =
         coroutineScope {
-            Timber.tag("SYNC").d("Syncing subscriptions")
+            AppLogger.d("SYNC","Syncing subscriptions")
             try {
                 val accountId = accountManager.activeAccountId.value ?: throw RuntimeException("No active account")
 
@@ -89,10 +89,10 @@ class SubscriptionRepositoryImpl @Inject constructor(
 
                 subscriptionDataStore.saveSubscriptions(accountId, subs)
                 subscriptionDataStore.saveQrConfig(qrConfig)
-                Timber.tag("SYNC").d("Sync complete: %d subscriptions", subs.size)
+                AppLogger.d("SYNC","Sync complete: %d subscriptions", subs.size)
                 AppResult.Success(subs.toList())
             } catch (e: Exception) {
-                Timber.tag("SYNC").e("Sync failed: %s", e.message)
+                AppLogger.e("SYNC","Sync failed: %s", e.message)
                 AppResult.Error(e)
             }
         }
@@ -112,7 +112,7 @@ class SubscriptionRepositoryImpl @Inject constructor(
                 vtsSoapClient.closeSession(sessionId)
             }
         } catch (e: Exception) {
-            Timber.tag("SYNC").w("VTS setup failed (non-fatal): %s", e.message)
+            AppLogger.w("SYNC","VTS setup failed (non-fatal): %s", e.message)
         }
     }
 
@@ -123,7 +123,7 @@ class SubscriptionRepositoryImpl @Inject constructor(
         when (val result = restClient.fetchUserCards(token, deviceUid, CARRIER_CODE)) {
             is AppResult.Success -> result.data
             is AppResult.Error -> {
-                Timber.tag("SYNC").w("Failed to fetch cards: %s", result.exception.message)
+                AppLogger.w("SYNC","Failed to fetch cards: %s", result.exception.message)
                 emptyList()
             }
         }

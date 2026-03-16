@@ -6,11 +6,10 @@ import coil.ImageLoaderFactory
 import dagger.hilt.android.HiltAndroidApp
 import it.atm.app.auth.AuthConstants
 import it.atm.app.data.local.TokenDataStore
-import it.atm.app.service.AccountManager
+import it.atm.app.auth.AccountManager
 import it.atm.app.util.AppLogger
 import kotlinx.coroutines.runBlocking
 import okhttp3.OkHttpClient
-import timber.log.Timber
 import javax.inject.Inject
 
 @HiltAndroidApp
@@ -23,7 +22,7 @@ class AtmApp : Application(), ImageLoaderFactory {
     override fun onCreate() {
         super.onCreate()
         AppLogger.init(BuildConfig.DEBUG)
-        Timber.tag("APP").d("AtmApp onCreate")
+        AppLogger.d("APP", "AtmApp onCreate")
         runBlocking { accountManager.load() }
     }
 

@@ -19,15 +19,15 @@ import it.atm.app.domain.model.UserProfile
 import it.atm.app.domain.repository.AuthRepository
 import it.atm.app.domain.repository.SubscriptionRepository
 import it.atm.app.domain.repository.TicketRepository
-import it.atm.app.service.AccountManager
-import it.atm.app.service.DuplicateAccountException
+import it.atm.app.auth.AccountManager
+import it.atm.app.auth.DuplicateAccountException
 import it.atm.app.util.AppResult
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.launch
-import timber.log.Timber
+import it.atm.app.util.AppLogger
 import javax.inject.Inject
 
 @HiltViewModel
@@ -215,7 +215,7 @@ class HomeViewModel @Inject constructor(
                 val deviceUid = tokenDataStore.getDeviceUid()
                 when (val result = ticketRepository.fetchTickets(token, deviceUid)) {
                     is AppResult.Success -> _tickets.value = result.data
-                    is AppResult.Error -> Timber.tag("REST").w("Ticket fetch failed: %s", result.exception.message)
+                    is AppResult.Error -> AppLogger.w("REST","Ticket fetch failed: %s", result.exception.message)
                 }
             } catch (_: Exception) {
             } finally {

@@ -7,13 +7,13 @@ import org.junit.Test
 class HexUtilsTest {
 
     @Test
-    fun toHexString_empty() {
-        assertEquals("", ByteArray(0).toHexString())
+    fun toHex_empty() {
+        assertEquals("", ByteArray(0).toHex())
     }
 
     @Test
-    fun toHexString_bytes() {
-        assertEquals("00ff10", byteArrayOf(0x00, 0xFF.toByte(), 0x10).toHexString())
+    fun toHex_bytes() {
+        assertEquals("00ff10", byteArrayOf(0x00, 0xFF.toByte(), 0x10).toHex())
     }
 
     @Test
@@ -24,6 +24,6 @@ class HexUtilsTest {
     @Test
     fun hexToBytes_roundTrip() {
         val original = byteArrayOf(0xDE.toByte(), 0xAD.toByte(), 0xBE.toByte(), 0xEF.toByte())
-        assertArrayEquals(original, original.toHexString().hexToBytes())
+        assertArrayEquals(original, original.toHex().hexToBytes())
     }
 }

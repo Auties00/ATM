@@ -3,11 +3,12 @@ package it.atm.app.nfc
 import it.atm.app.auth.AuthConstants
 import it.atm.app.qr.QrConstants
 import it.atm.app.qr.QrPayloadBuilder
+import it.atm.app.util.buildByteArray
 import it.atm.app.util.bytesToInt
 import it.atm.app.util.extract
 import it.atm.app.util.hexToBytes
 import it.atm.app.util.longToBytes
-import timber.log.Timber
+import it.atm.app.util.AppLogger
 import java.io.ByteArrayOutputStream
 import javax.crypto.Cipher
 import javax.crypto.spec.IvParameterSpec
@@ -67,12 +68,12 @@ class ApduProtocol(private val tokenStore: NfcTokenStore) {
                 request.isMatch(0x80, 0xA6) -> handlePhase2(request)
                 request.isMatch(0x80, 0xA7) -> handlePhase3(request)
                 else -> {
-                    Timber.tag(TAG).w("Unrecognized command CLA=%02x INS=%02x", request.cla, request.ins)
+                    AppLogger.w(TAG,"Unrecognized command CLA=%02x INS=%02x", request.cla, request.ins)
                     SW_WRONG_INS
                 }
             }
         } catch (e: Exception) {
-            Timber.tag(TAG).e("APDU processing failed: %s", e.message)
+            AppLogger.e(TAG,"APDU processing failed: %s", e.message)
             SW_INTERNAL_ERROR
         }
     }
@@ -83,7 +84,7 @@ class ApduProtocol(private val tokenStore: NfcTokenStore) {
 
         val data = tokenStore.loadActiveVToken()
         if (data == null || data.size < 57) {
-            Timber.tag(TAG).w("Phase 0: No active VToken available")
+            AppLogger.w(TAG,"Phase 0: No active VToken available")
             return SW_NOT_FOUND
         }
 
@@ -97,35 +98,18 @@ class ApduProtocol(private val tokenStore: NfcTokenStore) {
         val deviceUid = longToBytes(header.deviceUID, 8)
         val tokenSizeBytes = longToBytes(tokenSize.toLong(), 2)
 
-        val fciData = ByteArrayOutputStream()
-        fciData.write(0x84)
-        fciData.write(AID.size)
-        fciData.write(AID)
-        fciData.write(0xA5.toByte().toInt())
-        fciData.write(0x16)
-        fciData.write(byteArrayOf(0xBF.toByte(), 0x0C))
-        fciData.write(0x13)
-        fciData.write(0xC7.toByte().toInt())
-        fciData.write(0x08)
-        fciData.write(deviceUid)
-        fciData.write(0x53)
-        fciData.write(0x07)
-        fciData.write(0x01)
-        fciData.write(0x01)
-        fciData.write(tokenSizeBytes)
-        fciData.write(0x10)
-        fciData.write(0x01)
-        fciData.write(SDK_VERSION_SHORT)
+        val fciBody = buildByteArray {
+            put(0x84); put(AID.size); put(AID)
+            put(0xA5); put(0x16)
+            put(0xBF.toByte(), 0x0C); put(0x13)
+            put(0xC7); put(0x08); put(deviceUid)
+            put(0x53); put(0x07); put(0x01); put(0x01)
+            put(tokenSizeBytes)
+            put(0x10); put(0x01); put(SDK_VERSION_SHORT)
+        }
 
-        val fciBody = fciData.toByteArray()
-        val response = ByteArrayOutputStream()
-        response.write(0x6F)
-        response.write(fciBody.size)
-        response.write(fciBody)
-        response.write(SW_OK)
-
-        Timber.tag(TAG).d("Phase 0: SELECT OK, tokenSize=%d", tokenSize)
-        return response.toByteArray()
+        AppLogger.d(TAG,"Phase 0: SELECT OK, tokenSize=%d", tokenSize)
+        return buildByteArray { put(0x6F); put(fciBody.size); put(fciBody); put(SW_OK) }
     }
 
     private fun handlePhase1(request: ApduRequest): ByteArray {
@@ -150,7 +134,7 @@ class ApduProtocol(private val tokenStore: NfcTokenStore) {
         } else if (cipherType == 1) {
             val keyIndex = bytesToInt(data, 3, 2)
             if (keyIndex < 0 || keyIndex >= QrConstants.QR_KEYS.size) {
-                Timber.tag(TAG).w("Phase 1: Invalid AES key index %d", keyIndex)
+                AppLogger.w(TAG,"Phase 1: Invalid AES key index %d", keyIndex)
                 return SW_CONDITIONS_NOT_SATISFIED
             }
             useAes = true
@@ -162,12 +146,8 @@ class ApduProtocol(private val tokenStore: NfcTokenStore) {
         lastRequest = request
         phase = 1
 
-        val response = ByteArrayOutputStream()
-        response.write(byteArrayOf(0x80.toByte(), 0x12, 0x03, 0x01))
-        response.write(SW_OK)
-
-        Timber.tag(TAG).d("Phase 1: NEGOTIATE OK, cipher=%s", if (useAes) "AES" else "plaintext")
-        return response.toByteArray()
+        AppLogger.d(TAG,"Phase 1: NEGOTIATE OK, cipher=%s", if (useAes) "AES" else "plaintext")
+        return byteArrayOf(0x80.toByte(), 0x12, 0x03, 0x01) + SW_OK
     }
 
     private fun handlePhase2(request: ApduRequest): ByteArray {
@@ -199,29 +179,15 @@ class ApduProtocol(private val tokenStore: NfcTokenStore) {
 
         val chunk = tokenBytes.extract(offset, readSize.coerceAtMost(totalSize - offset))
 
-        val innerData = ByteArrayOutputStream()
-        innerData.write(chunk.size.toByte().toInt())
-        innerData.write(sessionNonce)
-        innerData.write(chunk)
-        val inner = innerData.toByteArray()
-
-        val responseData = ByteArrayOutputStream()
-        responseData.write(0x80.toByte().toInt())
-        responseData.write(inner.size + 5)
-        responseData.write(inner)
-
-        var respBytes = responseData.toByteArray()
+        val inner = buildByteArray { put(chunk.size); put(sessionNonce); put(chunk) }
+        var respBytes = buildByteArray { put(0x80); put(inner.size + 5); put(inner) }
 
         if (useAes && aesKey != null) {
             respBytes = encryptPhase2Response(respBytes)
         }
 
-        val response = ByteArrayOutputStream()
-        response.write(respBytes)
-        response.write(SW_OK)
-
-        Timber.tag(TAG).d("Phase 2: READ offset=%d size=%d/%d", offset, chunk.size, totalSize)
-        return response.toByteArray()
+        AppLogger.d(TAG,"Phase 2: READ offset=%d size=%d/%d", offset, chunk.size, totalSize)
+        return respBytes + SW_OK
     }
 
     private fun handlePhase3(request: ApduRequest): ByteArray {
@@ -266,16 +232,12 @@ class ApduProtocol(private val tokenStore: NfcTokenStore) {
 
         if (completionFlag == 1) {
             exchangeCompleted = true
-            Timber.tag(TAG).d("Phase 3: WRITE complete, stamp=%d bytes", writeBuffer.size())
+            AppLogger.d(TAG,"Phase 3: WRITE complete, stamp=%d bytes", writeBuffer.size())
         } else {
-            Timber.tag(TAG).d("Phase 3: WRITE partial, offset=%d, size=%d", writeOffset, writeData.size)
+            AppLogger.d(TAG,"Phase 3: WRITE partial, offset=%d, size=%d", writeOffset, writeData.size)
         }
 
-        val response = ByteArrayOutputStream()
-        response.write(byteArrayOf(0x80.toByte(), 0x04))
-        response.write(sessionNonce)
-        response.write(SW_OK)
-        return response.toByteArray()
+        return buildByteArray { put(0x80.toByte(), 0x04); put(sessionNonce); put(SW_OK) }
     }
 
     private fun aesEncrypt(data: ByteArray, key: ByteArray): ByteArray {
@@ -298,12 +260,7 @@ class ApduProtocol(private val tokenStore: NfcTokenStore) {
         val key = aesKey ?: return respData
         val plainPart = respData.extract(3, respData.size - 3)
         val encrypted = aesEncrypt(plainPart, key)
-        val out = ByteArrayOutputStream()
-        out.write(respData[0].toInt())
-        out.write(encrypted.size + 1)
-        out.write(respData[2].toInt())
-        out.write(encrypted)
-        return out.toByteArray()
+        return buildByteArray { put(respData[0].toInt()); put(encrypted.size + 1); put(respData[2].toInt()); put(encrypted) }
     }
 
     private fun decryptPhase3Request(request: ApduRequest): ApduRequest {

@@ -7,7 +7,7 @@ import okhttp3.Authenticator
 import okhttp3.Request
 import okhttp3.Response
 import okhttp3.Route
-import timber.log.Timber
+import it.atm.app.util.AppLogger
 
 class TokenAuthenticator(
     private val tokenDataStore: TokenDataStore,
@@ -19,7 +19,7 @@ class TokenAuthenticator(
         val authHeader = response.request.header("Authorization") ?: return null
         if (!authHeader.startsWith("Bearer ")) return null
 
-        Timber.tag("AUTH").d("401 received, attempting token refresh")
+        AppLogger.d("AUTH","401 received, attempting token refresh")
         return runBlocking {
             try {
                 authRepository().refreshAccessToken()
@@ -29,7 +29,7 @@ class TokenAuthenticator(
                     .header("X-Token-Retry", "1")
                     .build()
             } catch (_: Exception) {
-                Timber.tag("AUTH").w("Token refresh in authenticator failed, triggering logout")
+                AppLogger.w("AUTH","Token refresh in authenticator failed, triggering logout")
                 try { authRepository().logout() } catch (_: Exception) {}
                 null
             }

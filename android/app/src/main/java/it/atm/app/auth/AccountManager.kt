@@ -1,11 +1,11 @@
-package it.atm.app.service
+package it.atm.app.auth
 
 import it.atm.app.data.local.db.AccountDao
 import it.atm.app.data.local.db.AccountEntity
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
-import timber.log.Timber
+import it.atm.app.util.AppLogger
 import javax.inject.Inject
 import javax.inject.Singleton
 
@@ -26,7 +26,7 @@ class AccountManager @Inject constructor(
     val activeAccountId: StateFlow<String?> = _activeAccountId.asStateFlow()
 
     suspend fun load() {
-        Timber.tag("ACCOUNT").d("Loading accounts")
+        AppLogger.d("ACCOUNT","Loading accounts")
         val loaded = accountDao.getAll().filter { it.id != PENDING_ACCOUNT_ID }
         _accounts.value = loaded
         if (_activeAccountId.value == null) {
@@ -40,7 +40,7 @@ class AccountManager @Inject constructor(
     }
 
     suspend fun addOrUpdateAccount(account: AccountEntity) {
-        Timber.tag("ACCOUNT").d("Upsert account id=%s", account.id)
+        AppLogger.d("ACCOUNT","Upsert account id=%s", account.id)
         accountDao.upsert(account)
         if (account.id != PENDING_ACCOUNT_ID) {
             accountDao.deleteById(PENDING_ACCOUNT_ID)
@@ -61,12 +61,12 @@ class AccountManager @Inject constructor(
         accountDao.deleteById(PENDING_ACCOUNT_ID)
         accountDao.upsert(finalized)
         _activeAccountId.value = finalized.id
-        Timber.tag("ACCOUNT").d("Finalized pending account as %s", finalized.id)
+        AppLogger.d("ACCOUNT","Finalized pending account as %s", finalized.id)
         refreshCache()
     }
 
     suspend fun createPendingAccount(): AccountEntity {
-        Timber.tag("ACCOUNT").d("Creating pending account")
+        AppLogger.d("ACCOUNT","Creating pending account")
         accountDao.deleteById(PENDING_ACCOUNT_ID)
         val pending = AccountEntity(id = PENDING_ACCOUNT_ID)
         accountDao.upsert(pending)
@@ -82,7 +82,7 @@ class AccountManager @Inject constructor(
     }
 
     suspend fun removeAccount(accountId: String) {
-        Timber.tag("ACCOUNT").d("Removing account id=%s", accountId)
+        AppLogger.d("ACCOUNT","Removing account id=%s", accountId)
         accountDao.deleteById(accountId)
         if (_activeAccountId.value == accountId) {
             _activeAccountId.value = accountDao.getAll().firstOrNull()?.id
@@ -91,7 +91,7 @@ class AccountManager @Inject constructor(
     }
 
     suspend fun switchTo(accountId: String) {
-        Timber.tag("ACCOUNT").d("Switching to account id=%s", accountId)
+        AppLogger.d("ACCOUNT","Switching to account id=%s", accountId)
         _activeAccountId.value = accountId
     }
 

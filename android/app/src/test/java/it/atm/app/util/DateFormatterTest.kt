@@ -7,16 +7,12 @@ class DateFormatterTest {
 
     @Test
     fun formatDate_isoDateTime() {
-        val result = DateFormatter.formatDate("2025-06-15T10:30:00")
-        assertEquals(true, result.contains("15"))
-        assertEquals(true, result.contains("2025"))
+        assertEquals("15 Jun 2025", DateFormatter.formatDate("2025-06-15T10:30:00"))
     }
 
     @Test
     fun formatDate_isoDate() {
-        val result = DateFormatter.formatDate("2025-06-15")
-        assertEquals(true, result.contains("15"))
-        assertEquals(true, result.contains("2025"))
+        assertEquals("15 Jun 2025", DateFormatter.formatDate("2025-06-15"))
     }
 
     @Test
@@ -26,9 +22,7 @@ class DateFormatterTest {
 
     @Test
     fun formatDateTime_isoDateTime() {
-        val result = DateFormatter.formatDateTime("2025-06-15T10:30:00")
-        assertEquals(true, result.contains("15"))
-        assertEquals(true, result.contains("10:30"))
+        assertEquals("15 Jun 2025, 10:30", DateFormatter.formatDateTime("2025-06-15T10:30:00"))
     }
 
     @Test

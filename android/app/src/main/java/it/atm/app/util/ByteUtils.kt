@@ -1,12 +1,9 @@
 package it.atm.app.util
 
-fun longToBytes(value: Long, length: Int): ByteArray {
-    val bytes = ByteArray(length)
-    for (i in 0 until length) {
-        bytes[length - 1 - i] = ((value shr (i * 8)) and 0xFF).toByte()
-    }
-    return bytes
-}
+import java.nio.ByteBuffer
+
+fun longToBytes(value: Long, length: Int): ByteArray =
+    ByteBuffer.allocate(8).putLong(value).array().copyOfRange(8 - length, 8)
 
 fun bytesToInt(data: ByteArray, offset: Int, length: Int): Int {
     var result = 0
@@ -17,6 +14,7 @@ fun bytesToInt(data: ByteArray, offset: Int, length: Int): Int {
 }
 
 fun ByteArray.extract(offset: Int, length: Int): ByteArray {
-    val safeLen = length.coerceAtMost(size - offset).coerceAtLeast(0)
-    return copyOfRange(offset, offset + safeLen)
+    val safeEnd = (offset + length).coerceAtMost(size)
+    val safeStart = offset.coerceAtMost(safeEnd)
+    return copyOfRange(safeStart, safeEnd)
 }

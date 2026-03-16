@@ -6,8 +6,7 @@ import dagger.hilt.android.qualifiers.ApplicationContext
 import it.atm.app.data.local.TokenDataStore
 import it.atm.app.domain.model.AuthStatus
 import it.atm.app.domain.repository.AuthRepository
-import it.atm.app.service.AccountManager
-import it.atm.app.util.toHexString
+import it.atm.app.util.toHex
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
@@ -20,7 +19,7 @@ import net.openid.appauth.AuthorizationServiceConfiguration
 import net.openid.appauth.ResponseTypeValues
 import net.openid.appauth.TokenRequest
 import net.openid.appauth.TokenResponse
-import timber.log.Timber
+import it.atm.app.util.AppLogger
 import java.security.SecureRandom
 import javax.inject.Inject
 import javax.inject.Singleton
@@ -43,7 +42,7 @@ class AuthRepositoryImpl @Inject constructor(
     private suspend fun discoverConfiguration(): AuthorizationServiceConfiguration =
         withContext(Dispatchers.IO) {
             serviceConfig?.let { return@withContext it }
-            Timber.tag("AUTH").d("Discovering OIDC configuration")
+            AppLogger.d("AUTH","Discovering OIDC configuration")
             val issuerUri = Uri.parse(AuthConstants.AUTH_ISSUER)
             val config = suspendCoroutine<AuthorizationServiceConfiguration> { cont ->
                 AuthorizationServiceConfiguration.fetchFromIssuer(issuerUri) { config, ex ->
@@ -58,7 +57,7 @@ class AuthRepositoryImpl @Inject constructor(
     override suspend fun buildAuthRequest(): AuthorizationRequest {
         val config = discoverConfiguration()
         val nonce = generateNonce()
-        Timber.tag("AUTH").d("Building auth request")
+        AppLogger.d("AUTH","Building auth request")
         return AuthorizationRequest.Builder(
             config,
             AuthConstants.CLIENT_ID,
@@ -74,7 +73,7 @@ class AuthRepositoryImpl @Inject constructor(
 
     override suspend fun exchangeCode(authResponse: AuthorizationResponse) {
         withContext(Dispatchers.IO) {
-            Timber.tag("AUTH").d("Exchanging authorization code")
+            AppLogger.d("AUTH","Exchanging authorization code")
             val authService = AuthorizationService(context)
             try {
                 val tokenRequest = authResponse.createTokenExchangeRequest()
@@ -101,7 +100,7 @@ class AuthRepositoryImpl @Inject constructor(
                     tokenType = tokenType,
                     expiresAt = expiresAt
                 )
-                Timber.tag("AUTH").d("Token exchange successful")
+                AppLogger.d("AUTH","Token exchange successful")
                 _authStatus.value = AuthStatus.Authenticated(accessToken)
             } finally {
                 authService.dispose()
@@ -111,7 +110,7 @@ class AuthRepositoryImpl @Inject constructor(
 
     override suspend fun refreshAccessToken() {
         withContext(Dispatchers.IO) {
-            Timber.tag("AUTH").d("Refreshing access token")
+            AppLogger.d("AUTH","Refreshing access token")
             val refreshToken = tokenDataStore.getRefreshToken()
                 ?: throw RuntimeException("No refresh token available")
             val config = discoverConfiguration()
@@ -140,10 +139,10 @@ class AuthRepositoryImpl @Inject constructor(
                     tokenType = tokenType,
                     expiresAt = expiresAt
                 )
-                Timber.tag("AUTH").d("Token refresh successful")
+                AppLogger.d("AUTH","Token refresh successful")
                 _authStatus.value = AuthStatus.Authenticated(accessToken)
             } catch (e: Exception) {
-                Timber.tag("AUTH").w("Token refresh failed: %s", e.message)
+                AppLogger.w("AUTH","Token refresh failed: %s", e.message)
                 _authStatus.value = AuthStatus.NeedsLogin
                 throw e
             } finally {
@@ -175,7 +174,7 @@ class AuthRepositoryImpl @Inject constructor(
     }
 
     override suspend fun logout() {
-        Timber.tag("AUTH").d("Logging out")
+        AppLogger.d("AUTH","Logging out")
         _authStatus.value = AuthStatus.NeedsLogin
         tokenDataStore.clearAll()
     }
@@ -183,6 +182,6 @@ class AuthRepositoryImpl @Inject constructor(
     private fun generateNonce(): String {
         val bytes = ByteArray(16)
         SecureRandom().nextBytes(bytes)
-        return bytes.toHexString()
+        return bytes.toHex()
     }
 }

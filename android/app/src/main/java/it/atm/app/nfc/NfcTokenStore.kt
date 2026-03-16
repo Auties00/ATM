@@ -2,9 +2,9 @@ package it.atm.app.nfc
 
 import android.util.Base64
 import it.atm.app.data.local.db.SubscriptionDao
-import it.atm.app.service.AccountManager
+import it.atm.app.auth.AccountManager
 import kotlinx.coroutines.runBlocking
-import timber.log.Timber
+import it.atm.app.util.AppLogger
 import javax.inject.Inject
 import javax.inject.Singleton
 
@@ -23,7 +23,7 @@ class NfcTokenStore @Inject constructor(
         return try {
             Base64.decode(b64, Base64.DEFAULT)
         } catch (_: Exception) {
-            Timber.tag("NFC").w("Failed to decode VToken data")
+            AppLogger.w("NFC","Failed to decode VToken data")
             null
         }
     }

@@ -1,7 +1,7 @@
 package it.atm.app.qr
 
+import it.atm.app.util.buildByteArray
 import it.atm.app.util.longToBytes
-import java.io.ByteArrayOutputStream
 import java.nio.ByteBuffer
 
 object QrPayloadBuilder {
@@ -91,26 +91,22 @@ object QrPayloadBuilder {
         sigKey: Int,
         isRevalidation: Boolean
     ): ByteArray {
-        val out = ByteArrayOutputStream()
-
-        out.write(byteArrayOf(0x56, 0x54, 0x53, 0x51))
-        out.write(0x01)
-        out.write(if (isRevalidation) 0x02 else 0x00)
-        out.write(ByteArray(6))
-
-        out.write(longToBytes(header.uid, 8))
-        out.write(longToBytes(header.systemType.toLong(), 2))
-        out.write(longToBytes(header.systemSubType.toLong(), 2))
-        out.write(longToBytes(header.objectUID, 8))
-        out.write(longToBytes(header.objectType.toLong(), 1))
-        out.write(longToBytes(header.payloadSize.toLong(), 2))
-        out.write(longToBytes(header.deviceUID, 8))
-        out.write(longToBytes(System.currentTimeMillis() / 1000, 4))
-        out.write(ByteArray(6))
-
-        out.write(payload)
-
-        val message = out.toByteArray()
+        val message = buildByteArray {
+            put(0x56, 0x54, 0x53, 0x51)
+            put(0x01)
+            put(if (isRevalidation) 0x02 else 0x00)
+            putZeros(6)
+            put(longToBytes(header.uid, 8))
+            put(longToBytes(header.systemType.toLong(), 2))
+            put(longToBytes(header.systemSubType.toLong(), 2))
+            put(longToBytes(header.objectUID, 8))
+            put(longToBytes(header.objectType.toLong(), 1))
+            put(longToBytes(header.payloadSize.toLong(), 2))
+            put(longToBytes(header.deviceUID, 8))
+            put(longToBytes(System.currentTimeMillis() / 1000, 4))
+            putZeros(6)
+            put(payload)
+        }
         return if (sigType > 0) {
             QrSignatureEngine.makeSignature(message, sigType, sigKey)
         } else {

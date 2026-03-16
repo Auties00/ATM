@@ -1,7 +1,7 @@
 package it.atm.app.data.local
 
-import it.atm.app.service.AccountManager
-import timber.log.Timber
+import it.atm.app.auth.AccountManager
+import it.atm.app.util.AppLogger
 import java.util.UUID
 import javax.inject.Inject
 import javax.inject.Singleton
@@ -28,7 +28,7 @@ class TokenDataStore @Inject constructor(
         tokenType: String,
         expiresAt: Long
     ) {
-        Timber.tag("DATA").d("Saving tokens")
+        AppLogger.d("DATA","Saving tokens")
         accountManager.updateActiveAccount {
             it.copy(
                 accessToken = accessToken,
@@ -63,7 +63,7 @@ class TokenDataStore @Inject constructor(
     }
 
     suspend fun clearAll() {
-        Timber.tag("DATA").d("Clearing all tokens")
+        AppLogger.d("DATA","Clearing all tokens")
         val activeId = accountManager.activeAccountId.value
         if (activeId != null) {
             accountManager.removeAccount(activeId)

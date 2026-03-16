@@ -5,7 +5,7 @@ import it.atm.app.data.remote.rest.Ticket
 import it.atm.app.data.remote.rest.TicketQrCodeResponse
 import it.atm.app.domain.repository.TicketRepository
 import it.atm.app.util.AppResult
-import timber.log.Timber
+import it.atm.app.util.AppLogger
 import javax.inject.Inject
 import javax.inject.Singleton
 
@@ -15,7 +15,7 @@ class TicketRepositoryImpl @Inject constructor(
 ) : TicketRepository {
 
     override suspend fun fetchTickets(token: String, deviceUid: String): AppResult<List<Ticket>> {
-        Timber.tag("REST").d("Fetching all tickets")
+        AppLogger.d("REST","Fetching all tickets")
         return when (val result = restClient.fetchTickets(token, deviceUid)) {
             is AppResult.Success -> {
                 val response = result.data

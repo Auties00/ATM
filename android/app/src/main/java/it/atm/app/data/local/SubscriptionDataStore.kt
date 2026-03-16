@@ -3,13 +3,13 @@ package it.atm.app.data.local
 import it.atm.app.data.local.db.SubscriptionDao
 import it.atm.app.data.local.db.SubscriptionEntity
 import it.atm.app.domain.model.QrConfig
-import it.atm.app.service.AccountManager
+import it.atm.app.auth.AccountManager
 import it.atm.app.util.DateFormatter
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.flatMapLatest
 import kotlinx.coroutines.flow.flowOf
 import kotlinx.coroutines.flow.map
-import timber.log.Timber
+import it.atm.app.util.AppLogger
 import javax.inject.Inject
 import javax.inject.Singleton
 
@@ -19,7 +19,7 @@ class SubscriptionDataStore @Inject constructor(
     private val subscriptionDao: SubscriptionDao
 ) {
     suspend fun saveSubscriptions(accountId: String, subscriptions: List<SubscriptionEntity>) {
-        Timber.tag("DATA").d("Saving %d subscriptions for account=%s", subscriptions.size, accountId)
+        AppLogger.d("DATA","Saving %d subscriptions for account=%s", subscriptions.size, accountId)
         subscriptionDao.deleteByAccount(accountId)
         subscriptionDao.insertAll(subscriptions)
         accountManager.updateActiveAccount { it.copy(lastSync = DateFormatter.nowIso()) }
@@ -41,7 +41,7 @@ class SubscriptionDataStore @Inject constructor(
     }
 
     suspend fun saveQrConfig(config: QrConfig) {
-        Timber.tag("DATA").d("Saving QR config sigType=%d keyId=%d format=%d", config.sigType, config.initialKeyId, config.qrCodeFormat)
+        AppLogger.d("DATA","Saving QR config sigType=%d keyId=%d format=%d", config.sigType, config.initialKeyId, config.qrCodeFormat)
         accountManager.updateActiveAccount {
             it.copy(
                 qrSigType = config.sigType,
@@ -73,7 +73,7 @@ class SubscriptionDataStore @Inject constructor(
     }
 
     suspend fun clearAll() {
-        Timber.tag("DATA").d("Clearing subscription data")
+        AppLogger.d("DATA","Clearing subscription data")
         val activeId = accountManager.activeAccountId.value ?: return
         subscriptionDao.deleteByAccount(activeId)
         accountManager.updateActiveAccount { it.copy(lastSync = null) }

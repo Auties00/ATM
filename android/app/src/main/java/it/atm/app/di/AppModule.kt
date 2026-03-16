@@ -18,7 +18,7 @@ import it.atm.app.domain.repository.AuthRepository
 import it.atm.app.domain.repository.SubscriptionRepository
 import it.atm.app.domain.repository.TicketRepository
 import okhttp3.OkHttpClient
-import timber.log.Timber
+import it.atm.app.util.AppLogger
 import java.util.concurrent.TimeUnit
 import javax.inject.Singleton
 
@@ -52,7 +52,7 @@ object AppModule {
         if (BuildConfig.DEBUG) {
             builder.addInterceptor(
                 okhttp3.logging.HttpLoggingInterceptor { message ->
-                    Timber.tag("HTTP").d(message)
+                    AppLogger.d("HTTP", message)
                 }.apply {
                     level = okhttp3.logging.HttpLoggingInterceptor.Level.BODY
                 }

@@ -11,8 +11,8 @@ import it.atm.app.data.local.TokenDataStore
 import it.atm.app.data.remote.rest.AtmRestClient
 import it.atm.app.domain.model.AuthStatus
 import it.atm.app.domain.repository.AuthRepository
-import it.atm.app.service.AccountManager
-import it.atm.app.service.DuplicateAccountException
+import it.atm.app.auth.AccountManager
+import it.atm.app.auth.DuplicateAccountException
 import it.atm.app.util.AppResult
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
@@ -22,7 +22,7 @@ import kotlinx.coroutines.launch
 import net.openid.appauth.AuthorizationException
 import net.openid.appauth.AuthorizationResponse
 import net.openid.appauth.AuthorizationService
-import timber.log.Timber
+import it.atm.app.util.AppLogger
 import javax.inject.Inject
 
 data class LoginUiState(
@@ -71,7 +71,7 @@ class LoginViewModel @Inject constructor(
                 launcher.launch(authIntent)
                 authService.dispose()
             } catch (e: Exception) {
-                Timber.tag("NAV").e("Login initiation failed: %s", e.message)
+                AppLogger.e("NAV","Login initiation failed: %s", e.message)
                 _uiState.update { it.copy(isLoading = false, error = e.message ?: "Login failed") }
             }
         }

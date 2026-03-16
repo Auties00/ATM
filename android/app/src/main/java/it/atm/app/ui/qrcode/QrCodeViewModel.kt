@@ -10,7 +10,7 @@ import it.atm.app.data.local.db.SubscriptionEntity
 import it.atm.app.data.remote.vts.VtsSoapClient
 import it.atm.app.qr.BarcodeEncoder
 import it.atm.app.qr.QrPayloadBuilder
-import it.atm.app.service.AccountManager
+import it.atm.app.auth.AccountManager
 import it.atm.app.util.DateFormatter
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.delay
@@ -19,7 +19,7 @@ import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.launch
-import timber.log.Timber
+import it.atm.app.util.AppLogger
 import javax.inject.Inject
 
 @HiltViewModel
@@ -120,7 +120,7 @@ class QrCodeViewModel @Inject constructor(
                 subscriptionDataStore.saveQrConfig(freshQrConfig)
 
                 if (tokenRequiresGeneration(tokenData)) {
-                    Timber.tag("QR").d("Token requiresGeneration=true, regenerating...")
+                    AppLogger.d("QR","Token requiresGeneration=true, regenerating...")
                     try {
                         vtsSoapClient.generateVToken(sessionId, vtokenUid, subscription.signatureCount.coerceAtLeast(1))
                     } catch (_: Exception) {}
@@ -138,7 +138,7 @@ class QrCodeViewModel @Inject constructor(
                 vtsSoapClient.closeSession(sessionId)
             }
         } catch (e: Exception) {
-            Timber.tag("QR").w("VTS sync/activation failed: %s", e.message)
+            AppLogger.w("QR","VTS sync/activation failed: %s", e.message)
         }
 
         ticketData = tokenData
@@ -174,7 +174,7 @@ class QrCodeViewModel @Inject constructor(
             )
             _qrBitmap.value = BarcodeEncoder.generateQr(qrBytes, 1024)
         } catch (e: Exception) {
-            Timber.tag("QR").e("QR generation failed: %s", e.message)
+            AppLogger.e("QR","QR generation failed: %s", e.message)
             _error.value = "QR generation failed: ${e.message}"
         }
     }

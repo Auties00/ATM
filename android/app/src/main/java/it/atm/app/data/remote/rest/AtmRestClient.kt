@@ -11,7 +11,7 @@ import okhttp3.MediaType.Companion.toMediaType
 import okhttp3.OkHttpClient
 import okhttp3.Request
 import okhttp3.RequestBody.Companion.toRequestBody
-import timber.log.Timber
+import it.atm.app.util.AppLogger
 import java.util.concurrent.TimeUnit
 import javax.inject.Inject
 
@@ -49,7 +49,7 @@ class AtmRestClient @Inject constructor(
     }
 
     suspend fun syncAccount(token: String, deviceUid: String): AppResult<Unit> = withContext(Dispatchers.IO) {
-        Timber.tag("REST").d("syncAccount")
+        AppLogger.d("REST","syncAccount")
         try {
             val request = Request.Builder()
                 .url(AuthConstants.ACCOUNT_SYNC_URL)
@@ -69,7 +69,7 @@ class AtmRestClient @Inject constructor(
     }
 
     suspend fun fetchChecks(token: String, deviceUid: String): AppResult<ChecksResponse> = withContext(Dispatchers.IO) {
-        Timber.tag("REST").d("fetchChecks")
+        AppLogger.d("REST","fetchChecks")
         try {
             val request = Request.Builder()
                 .url("${AuthConstants.TICKETING_BASE}/Checks")
@@ -90,7 +90,7 @@ class AtmRestClient @Inject constructor(
     }
 
     suspend fun fetchUserCards(token: String, deviceUid: String, carrierCode: String): AppResult<List<CardItem>> = withContext(Dispatchers.IO) {
-        Timber.tag("REST").d("fetchUserCards carrier=%s", carrierCode)
+        AppLogger.d("REST","fetchUserCards carrier=%s", carrierCode)
         try {
             val requestBody = json.encodeToString(
                 kotlinx.serialization.json.JsonObject.serializer(),
@@ -123,7 +123,7 @@ class AtmRestClient @Inject constructor(
     }
 
     suspend fun initiateMigration(token: String, deviceUid: String): AppResult<Unit> = withContext(Dispatchers.IO) {
-        Timber.tag("REST").d("initiateMigration")
+        AppLogger.d("REST","initiateMigration")
         try {
             val request = Request.Builder()
                 .url("${AuthConstants.TICKETING_BASE}/Tickets/Migration")
@@ -145,7 +145,7 @@ class AtmRestClient @Inject constructor(
     }
 
     suspend fun executeAepMigration(token: String, deviceUid: String, carrierCode: String): AppResult<Unit> = withContext(Dispatchers.IO) {
-        Timber.tag("REST").d("executeAepMigration carrier=%s", carrierCode)
+        AppLogger.d("REST","executeAepMigration carrier=%s", carrierCode)
         try {
             val request = Request.Builder()
                 .url("${AuthConstants.TICKETING_BASE}/Migration/ExecuteAepMigrations/$carrierCode")
@@ -180,7 +180,7 @@ class AtmRestClient @Inject constructor(
     }
 
     suspend fun fetchTickets(token: String, deviceUid: String): AppResult<TicketsResponse> = withContext(Dispatchers.IO) {
-        Timber.tag("REST").d("fetchTickets")
+        AppLogger.d("REST","fetchTickets")
         try {
             val request = Request.Builder()
                 .url("${AuthConstants.TICKETING_BASE}/Tickets")
@@ -206,7 +206,7 @@ class AtmRestClient @Inject constructor(
         ticketId: String,
         validationId: String?
     ): AppResult<TicketQrCodeResponse> = withContext(Dispatchers.IO) {
-        Timber.tag("REST").d("fetchTicketQrCode ticketId=%s", ticketId)
+        AppLogger.d("REST","fetchTicketQrCode ticketId=%s", ticketId)
         try {
             val path = if (validationId.isNullOrBlank()) {
                 "Ticket/$ticketId/QrCode"
@@ -232,7 +232,7 @@ class AtmRestClient @Inject constructor(
     }
 
     suspend fun validateTicket(token: String, deviceUid: String, ticketId: String): AppResult<Unit> = withContext(Dispatchers.IO) {
-        Timber.tag("REST").d("validateTicket ticketId=%s", ticketId)
+        AppLogger.d("REST","validateTicket ticketId=%s", ticketId)
         try {
             val request = Request.Builder()
                 .url("${AuthConstants.TICKETING_BASE}/Ticket/$ticketId/Validate")
@@ -253,7 +253,7 @@ class AtmRestClient @Inject constructor(
     }
 
     suspend fun fetchAccountProfile(token: String, deviceUid: String): AppResult<AccountProfileResponse> = withContext(Dispatchers.IO) {
-        Timber.tag("REST").d("fetchAccountProfile")
+        AppLogger.d("REST","fetchAccountProfile")
         try {
             val request = Request.Builder()
                 .url(AuthConstants.ACCOUNT_URL)
@@ -283,7 +283,7 @@ class AtmRestClient @Inject constructor(
         phonePrefix: String,
         birthDate: String?
     ): AppResult<Unit> = withContext(Dispatchers.IO) {
-        Timber.tag("REST").d("updateAccount")
+        AppLogger.d("REST","updateAccount")
         try {
             val bodyObj = buildJsonObject {
                 put("name", JsonPrimitive(name))
