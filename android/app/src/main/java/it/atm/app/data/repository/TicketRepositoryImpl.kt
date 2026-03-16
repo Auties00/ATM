@@ -19,15 +19,15 @@ class TicketRepositoryImpl @Inject constructor(
         return when (val result = restClient.fetchTickets(token, deviceUid)) {
             is AppResult.Success -> {
                 val response = result.data
-                val all = mutableListOf<Ticket>()
-                response.ticketsTPL?.let { all.addAll(it) }
-                response.integratedTicketsTPL?.let { all.addAll(it) }
-                response.subscriptions?.let { all.addAll(it) }
-                response.ticketsTI?.let { all.addAll(it) }
-                response.ticketsItabus?.let { all.addAll(it) }
-                response.ticketsGT?.let { all.addAll(it) }
-                response.ticketsItalo?.let { all.addAll(it) }
-                AppResult.Success(all)
+                AppResult.Success(buildList {
+                    response.ticketsTPL?.let(::addAll)
+                    response.integratedTicketsTPL?.let(::addAll)
+                    response.subscriptions?.let(::addAll)
+                    response.ticketsTI?.let(::addAll)
+                    response.ticketsItabus?.let(::addAll)
+                    response.ticketsGT?.let(::addAll)
+                    response.ticketsItalo?.let(::addAll)
+                })
             }
             is AppResult.Error -> result
         }

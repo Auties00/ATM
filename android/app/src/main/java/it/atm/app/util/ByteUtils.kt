@@ -1,9 +1,12 @@
 package it.atm.app.util
 
-import java.nio.ByteBuffer
-
-fun longToBytes(value: Long, length: Int): ByteArray =
-    ByteBuffer.allocate(8).putLong(value).array().copyOfRange(8 - length, 8)
+fun longToBytes(value: Long, length: Int): ByteArray {
+    val result = ByteArray(length)
+    for (i in 0 until length) {
+        result[i] = ((value shr (8 * (length - 1 - i))) and 0xFF).toByte()
+    }
+    return result
+}
 
 fun bytesToInt(data: ByteArray, offset: Int, length: Int): Int {
     var result = 0
@@ -30,9 +33,12 @@ class ByteArrayBuilder {
         abstract val size: Int
         abstract fun writeTo(dest: ByteArray, offset: Int)
 
-        class Bytes(val data: ByteArray) : Part() {
-            override val size get() = data.size
-            override fun writeTo(dest: ByteArray, offset: Int) = data.copyInto(dest, offset)
+        class Bytes(val data: ByteArray, val srcOffset: Int, override val size: Int) : Part() {
+            constructor(data: ByteArray) : this(data, 0, data.size)
+
+            override fun writeTo(dest: ByteArray, offset: Int) {
+                data.copyInto(dest, offset, srcOffset, srcOffset + size)
+            }
         }
 
         class Zeros(override val size: Int) : Part() {
@@ -51,6 +57,11 @@ class ByteArrayBuilder {
     fun put(bytes: ByteArray) {
         parts.add(Part.Bytes(bytes))
         totalSize += bytes.size
+    }
+
+    fun put(bytes: ByteArray, offset: Int, length: Int) {
+        parts.add(Part.Bytes(bytes, offset, length))
+        totalSize += length
     }
 
     fun put(vararg bytes: Byte) {

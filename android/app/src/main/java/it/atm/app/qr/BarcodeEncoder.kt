@@ -44,12 +44,15 @@ object BarcodeEncoder {
         height: Int,
         bgColor: Int
     ): Bitmap {
-        val bitmap = Bitmap.createBitmap(width, height, Bitmap.Config.ARGB_8888)
+        val pixels = IntArray(width * height)
         for (y in 0 until height) {
+            val rowOffset = y * width
             for (x in 0 until width) {
-                bitmap.setPixel(x, y, if (bitMatrix.get(x, y)) Color.BLACK else bgColor)
+                pixels[rowOffset + x] = if (bitMatrix.get(x, y)) Color.BLACK else bgColor
             }
         }
+        val bitmap = Bitmap.createBitmap(width, height, Bitmap.Config.ARGB_8888)
+        bitmap.setPixels(pixels, 0, width, 0, 0, width, height)
         return bitmap
     }
 }

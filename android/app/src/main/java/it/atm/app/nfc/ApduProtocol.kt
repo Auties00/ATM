@@ -269,10 +269,7 @@ class ApduProtocol(private val tokenStore: NfcTokenStore) {
         if (data.size <= 3) return request
         val encryptedPart = data.extract(3, data.size - 3)
         val decrypted = aesDecrypt(encryptedPart, key)
-        val newData = ByteArray(3 + decrypted.size)
-        System.arraycopy(data, 0, newData, 0, 3)
-        System.arraycopy(decrypted, 0, newData, 3, decrypted.size)
-        return request.copy(data = newData)
+        return request.copy(data = buildByteArray { put(data, 0, 3); put(decrypted) })
     }
 
     private fun parseApdu(raw: ByteArray): ApduRequest {
