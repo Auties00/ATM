@@ -64,6 +64,7 @@ class ByteArrayBuilder {
         totalSize += length
     }
 
+    @JvmName("putBytes")
     fun put(vararg bytes: Byte) {
         parts.add(Part.Bytes(bytes))
         totalSize += bytes.size
