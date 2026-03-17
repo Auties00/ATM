@@ -120,18 +120,15 @@ class QrCodeViewModel @Inject constructor(
                 qrCodeFormat = freshQrConfig.qrCodeFormat
                 subscriptionDataStore.saveQrConfig(freshQrConfig)
 
-                if (tokenRequiresGeneration(tokenData)) {
-                    AppLogger.d("QR","Token requiresGeneration=true, regenerating...")
-                    try {
-                        vtsSoapClient.generateVToken(sessionId, vtokenUid, subscription.signatureCount.coerceAtLeast(1))
-                    } catch (_: Exception) {}
+                try {
+                    vtsSoapClient.generateVToken(sessionId, vtokenUid, subscription.signatureCount.coerceAtLeast(1))
+                } catch (_: Exception) {}
 
-                    val freshB64 = vtsSoapClient.getVToken(sessionId, vtokenUid)
-                    if (!freshB64.isNullOrBlank()) {
-                        tokenData = Base64.decode(freshB64, Base64.DEFAULT)
-                        dataB64 = freshB64
-                        subscriptionDataStore.updateCachedData(account.id, vtokenUid, freshB64)
-                    }
+                val freshB64 = vtsSoapClient.getVToken(sessionId, vtokenUid)
+                if (!freshB64.isNullOrBlank()) {
+                    tokenData = Base64.decode(freshB64, Base64.DEFAULT)
+                    dataB64 = freshB64
+                    subscriptionDataStore.updateCachedData(account.id, vtokenUid, freshB64)
                 }
 
                 vtsSoapClient.changeVTokenStatus(sessionId, vtokenUid, status = 0)
@@ -147,21 +144,15 @@ class QrCodeViewModel @Inject constructor(
         startQrLoop()
     }
 
-    private fun tokenRequiresGeneration(data: ByteArray): Boolean {
-        if (data.size < 57) return false
-        return QrPayloadBuilder.parseHeader(data).requiresGeneration
-    }
-
     private fun startQrLoop() {
         timerJob?.cancel()
         timerJob = viewModelScope.launch {
             while (true) {
                 generateQr()
-                for (remaining in 25 downTo 1) {
+                for (remaining in 10 downTo 1) {
                     _secondsRemaining.value = remaining
                     delay(1000L)
                 }
-                keyId = (keyId + 1) % QrConstants.KEY_COUNT
             }
         }
     }
