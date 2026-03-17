@@ -32,7 +32,16 @@ class NfcTokenStore @Inject constructor(
         return accountManager.getActiveAccount()?.deviceUid ?: ""
     }
 
-    fun saveValidationStamp(stamp: ByteArray) {
+    fun getSignatureCount(): Int {
+        val account = accountManager.getActiveAccount() ?: return 1
+        val index = account.activeNfcSubscriptionIndex
+        if (index < 0) return 1
+        val subs = runBlocking { subscriptionDao.getByAccount(account.id) }
+        if (index !in subs.indices) return 1
+        return subs[index].signatureCount.coerceAtLeast(1)
+    }
+
+    fun saveValidationStamp(fullToken: ByteArray) {
         val account = accountManager.getActiveAccount() ?: return
         val index = account.activeNfcSubscriptionIndex
         if (index < 0) return
@@ -40,7 +49,7 @@ class NfcTokenStore @Inject constructor(
         if (index !in subs.indices) return
         val sub = subs[index]
         if (sub.vtokenUid.isBlank()) return
-        val b64 = Base64.encodeToString(stamp, Base64.NO_WRAP)
+        val b64 = Base64.encodeToString(fullToken, Base64.NO_WRAP)
         runBlocking { subscriptionDao.updateDataOutBin(account.id, sub.vtokenUid, b64) }
     }
 }

@@ -8,6 +8,8 @@ import com.google.zxing.aztec.AztecWriter
 import com.google.zxing.oned.Code128Writer
 import com.google.zxing.qrcode.QRCodeWriter
 import com.google.zxing.qrcode.decoder.ErrorCorrectionLevel
+import androidx.core.graphics.createBitmap
+import com.google.zxing.common.BitMatrix
 
 object BarcodeEncoder {
 
@@ -39,7 +41,7 @@ object BarcodeEncoder {
     }
 
     private fun renderBitMatrix(
-        bitMatrix: com.google.zxing.common.BitMatrix,
+        bitMatrix: BitMatrix,
         width: Int,
         height: Int,
         bgColor: Int
@@ -51,7 +53,7 @@ object BarcodeEncoder {
                 pixels[rowOffset + x] = if (bitMatrix.get(x, y)) Color.BLACK else bgColor
             }
         }
-        val bitmap = Bitmap.createBitmap(width, height, Bitmap.Config.ARGB_8888)
+        val bitmap = createBitmap(width, height)
         bitmap.setPixels(pixels, 0, width, 0, 0, width, height)
         return bitmap
     }

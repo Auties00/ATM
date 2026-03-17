@@ -64,6 +64,7 @@ import kotlinx.coroutines.launch
 fun TicketsTab(
     tickets: List<Ticket>,
     isLoading: Boolean,
+    isOffline: Boolean = false,
     onRefresh: () -> Unit,
     onTicketClick: (Ticket) -> Unit,
     modifier: Modifier = Modifier
@@ -92,7 +93,7 @@ fun TicketsTab(
 
         PullToRefreshBox(
             isRefreshing = pullRefreshing,
-            onRefresh = { pullRefreshing = true; onRefresh() },
+            onRefresh = { if (!isOffline) { pullRefreshing = true; onRefresh() } },
             modifier = Modifier.fillMaxSize()
         ) {
             if (isLoading && tickets.isEmpty()) {

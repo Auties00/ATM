@@ -39,8 +39,8 @@ class AtmRestClient @Inject constructor(
         token: String,
         deviceUid: String
     ): Map<String, String> = buildBaseHeaders(token, deviceUid) + mapOf(
-        "aepvtssdk" to AuthConstants.SDK_VERSION,
-        "deviceuniqueidaep" to deviceUid
+        "AepVtsSdk" to AuthConstants.SDK_VERSION,
+        "DeviceUniqueIdAep" to deviceUid
     )
 
     private fun Request.Builder.applyHeaders(headers: Map<String, String>): Request.Builder {
@@ -231,12 +231,31 @@ class AtmRestClient @Inject constructor(
         }
     }
 
-    suspend fun validateTicket(token: String, deviceUid: String, ticketId: String): Result<Unit> = withContext(Dispatchers.IO) {
+    suspend fun validateTicket(
+        token: String,
+        deviceUid: String,
+        ticketId: String,
+        coordinates: TicketValidateCoordinates? = null,
+        runsNr: Int? = null,
+        integratedProgressive: Int? = null,
+        qrCodeValidationValue: String? = null,
+        textValidationValue: String? = null,
+        beaconValidationValue: String? = null
+    ): Result<Unit> = withContext(Dispatchers.IO) {
         AppLogger.d("REST","validateTicket ticketId=%s", ticketId)
         try {
+            val body = TicketValidateRequest(
+                coordinates = coordinates,
+                runsNr = runsNr,
+                integratedProgressive = integratedProgressive,
+                qrCodeValidationValue = qrCodeValidationValue,
+                textValidationValue = textValidationValue,
+                beaconValidationValue = beaconValidationValue
+            )
+            val bodyJson = json.encodeToString(TicketValidateRequest.serializer(), body)
             val request = Request.Builder()
                 .url("${AuthConstants.TICKETING_BASE}/Ticket/$ticketId/Validate")
-                .post("{}".toRequestBody(jsonMediaType))
+                .post(bodyJson.toRequestBody(jsonMediaType))
                 .applyHeaders(buildTicketingHeaders(token, deviceUid))
                 .build()
             val response = httpClient.newCall(request).execute()

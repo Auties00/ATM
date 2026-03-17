@@ -1,9 +1,10 @@
 package it.atm.app.util
 
-fun longToBytes(value: Long, length: Int): ByteArray {
-    val result = ByteArray(length)
-    for (i in 0 until length) {
-        result[i] = ((value shr (8 * (length - 1 - i))) and 0xFF).toByte()
+fun longToBytes(value: Long, skip: Int): ByteArray {
+    val outputLen = 8 - skip.coerceIn(0, 8)
+    val result = ByteArray(outputLen)
+    for (i in 0 until outputLen) {
+        result[(outputLen - i) - 1] = ((value shr (i * 8)) and 0xFF).toByte()
     }
     return result
 }

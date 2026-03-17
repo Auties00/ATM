@@ -19,7 +19,7 @@ class TokenDataStore @Inject constructor(
         accountManager.updateActiveAccount { it.copy(onboardingComplete = true) }
     }
 
-    suspend fun isOnboardingComplete(): Boolean {
+    fun isOnboardingComplete(): Boolean {
         return onboardingCompleteOverride
             ?: (accountManager.getActiveAccount()?.onboardingComplete ?: false)
     }
@@ -41,13 +41,13 @@ class TokenDataStore @Inject constructor(
         }
     }
 
-    suspend fun getAccessToken(): String? = accountManager.getActiveAccount()?.accessToken
+    fun getAccessToken(): String? = accountManager.getActiveAccount()?.accessToken
 
-    suspend fun getRefreshToken(): String? = accountManager.getActiveAccount()?.refreshToken
+    fun getRefreshToken(): String? = accountManager.getActiveAccount()?.refreshToken
 
-    suspend fun getTokenType(): String? = accountManager.getActiveAccount()?.tokenType
+    fun getTokenType(): String? = accountManager.getActiveAccount()?.tokenType
 
-    suspend fun getExpiresAt(): Long? = accountManager.getActiveAccount()?.expiresAt
+    fun getExpiresAt(): Long? = accountManager.getActiveAccount()?.expiresAt
 
     private val deviceUidMutex = Mutex()
 

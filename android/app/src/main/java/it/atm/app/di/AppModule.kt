@@ -9,7 +9,7 @@ import dagger.hilt.android.qualifiers.ApplicationContext
 import dagger.hilt.components.SingletonComponent
 import it.atm.app.BuildConfig
 import it.atm.app.auth.AuthConstants
-import it.atm.app.auth.AuthRepositoryImpl
+import it.atm.app.data.repository.AuthRepositoryImpl
 import it.atm.app.auth.TokenAuthenticator
 import it.atm.app.data.local.TokenDataStore
 import it.atm.app.data.repository.SubscriptionRepositoryImpl

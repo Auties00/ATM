@@ -7,21 +7,34 @@ import org.junit.Test
 class ByteUtilsTest {
 
     @Test
-    fun longToBytes_8bytes() {
+    fun longToBytes_skip0_full8bytes() {
         assertArrayEquals(
             byteArrayOf(0x01, 0x02, 0x03, 0x04, 0x05, 0x06, 0x07, 0x08),
-            longToBytes(0x0102030405060708L, 8)
+            longToBytes(0x0102030405060708L, 0)
         )
     }
 
     @Test
-    fun longToBytes_2bytes() {
-        assertArrayEquals(byteArrayOf(0x01, 0x00), longToBytes(256L, 2))
+    fun longToBytes_skip6_2bytes() {
+        assertArrayEquals(byteArrayOf(0x01, 0x00), longToBytes(256L, 6))
     }
 
     @Test
-    fun longToBytes_1byte() {
-        assertArrayEquals(byteArrayOf(0xFF.toByte()), longToBytes(255L, 1))
+    fun longToBytes_skip7_1byte() {
+        assertArrayEquals(byteArrayOf(0xFF.toByte()), longToBytes(255L, 7))
+    }
+
+    @Test
+    fun longToBytes_skip4_4bytes() {
+        assertArrayEquals(
+            byteArrayOf(0x00, 0x00, 0x02, 0x20),
+            longToBytes(544L, 4)
+        )
+    }
+
+    @Test
+    fun longToBytes_skip8_empty() {
+        assertArrayEquals(ByteArray(0), longToBytes(12345L, 8))
     }
 
     @Test

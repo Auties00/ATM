@@ -61,6 +61,7 @@ import kotlinx.coroutines.launch
 fun SubscriptionsTab(
     subscriptions: List<SubscriptionEntity>,
     isLoading: Boolean,
+    isOffline: Boolean = false,
     onRefresh: () -> Unit,
     onSubscriptionClick: (Int) -> Unit,
     modifier: Modifier = Modifier
@@ -89,7 +90,7 @@ fun SubscriptionsTab(
 
         PullToRefreshBox(
             isRefreshing = pullRefreshing,
-            onRefresh = { pullRefreshing = true; onRefresh() },
+            onRefresh = { if (!isOffline) { pullRefreshing = true; onRefresh() } },
             modifier = Modifier.fillMaxSize()
         ) {
             if (isLoading && subscriptions.isEmpty()) {

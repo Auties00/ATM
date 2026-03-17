@@ -291,6 +291,24 @@ class VtsSoapClient @Inject constructor(
         SoapXmlParser.parseContractInfo(decoded)
     }
 
+    suspend fun putVToken(sessionId: String, vtokenUid: String, signatureCount: Int, dataOutBin: String) = withContext(Dispatchers.IO) {
+        AppLogger.d("VTS","PutVToken uid=%s sigCount=%d", vtokenUid, signatureCount)
+        val params = "VTokenUID=\"$vtokenUid\" SignatureCount=\"$signatureCount\""
+        val requestXml =
+            "<vts:VTS_RequestFunction xmlns:vts=\"${AuthConstants.NS_AEP}\">" +
+                "<vts:Header Version=\"1\"/>" +
+                "<vts:Body><vts:Parameters $params/></vts:Body>" +
+                "</vts:VTS_RequestFunction>"
+        val dataInXml = Base64.encodeToString(requestXml.toByteArray(Charsets.UTF_8), Base64.NO_WRAP)
+        val body = "<vtsr:vts_RequestFunction><vtsr:msgIn>" +
+            "<vtsf:DataInBin>$dataOutBin</vtsf:DataInBin>" +
+            "<vtsf:DataInXml>$dataInXml</vtsf:DataInXml>" +
+            "<vtsf:FunctionName>vts_FuncPutVToken</vtsf:FunctionName>" +
+            "<vtsf:SessionID>$sessionId</vtsf:SessionID>" +
+            "</vtsr:msgIn></vtsr:vts_RequestFunction>"
+        sendSoap(AuthConstants.SOAP_REQUEST_FUNCTION, body)
+    }
+
     suspend fun getServerInfo(sessionId: String): QrConfig = withContext(Dispatchers.IO) {
         AppLogger.d("VTS","GetServerInfo")
         val params = "RequestUserData=\"true\" RequestPhotoImage=\"true\" RequestStatistics=\"true\""

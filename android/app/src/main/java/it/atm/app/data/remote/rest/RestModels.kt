@@ -50,6 +50,10 @@ data class TicketsResponse(
     @SerialName("ticketsItabus") val ticketsItabus: List<Ticket>? = null,
     @SerialName("ticketsGT") val ticketsGT: List<Ticket>? = null,
     @SerialName("ticketsItalo") val ticketsItalo: List<Ticket>? = null,
+    @SerialName("ticketsOpenMoveGT") val ticketsOpenMoveGT: List<Ticket>? = null,
+    @SerialName("ticketsMaritime") val ticketsMaritime: List<Ticket>? = null,
+    @SerialName("ticketsTerravision") val ticketsTerravision: List<Ticket>? = null,
+    @SerialName("carriers") val carriers: List<TicketCarrier>? = null,
 )
 
 @Serializable
@@ -79,6 +83,20 @@ data class Ticket(
     @SerialName("expiredDatetime") val expiredDatetime: String? = null,
     @SerialName("minimumAllowedObliterationDate") val minimumAllowedObliterationDate: String? = null,
     @SerialName("maximumAllowedObliterationDate") val maximumAllowedObliterationDate: String? = null,
+    @SerialName("useModes") val useModes: List<String>? = null,
+    @SerialName("allowParallelValidation") val allowParallelValidation: Boolean? = null,
+    @SerialName("manualValidation") val manualValidation: TicketManualValidation? = null,
+    @SerialName("ticketCategory") val ticketCategory: String? = null,
+    @SerialName("maxParallelValidation") val maxParallelValidation: Int? = null,
+    @SerialName("checkPanel") val checkPanel: String? = null,
+    @SerialName("vehicles") val vehicles: List<String>? = null,
+    @SerialName("ticketPnr") val ticketPnr: String? = null,
+    @SerialName("migrationTicketInfo") val migrationTicketInfo: String? = null,
+    @SerialName("giftTicketInfo") val giftTicketInfo: String? = null,
+    @SerialName("additionalDetails") val additionalDetails: List<String>? = null,
+    @SerialName("cardInformation") val cardInformation: String? = null,
+    @SerialName("reservations") val reservations: List<String>? = null,
+    @SerialName("linesCode") val linesCode: List<String>? = null,
 ) {
     val displayStatus: TicketStatus
         get() = when (status.uppercase()) {
@@ -145,4 +163,32 @@ data class MigrationResponse(
     @SerialName("errorCode") val errorCode: String? = null,
     @SerialName("errorMessage") val errorMessage: String? = null,
     @SerialName("message") val message: String? = null,
+)
+
+@Serializable
+data class TicketCarrier(
+    @SerialName("carrierCode") val carrierCode: String = "",
+    @SerialName("carrierName") val carrierName: String = "",
+)
+
+@Serializable
+data class TicketManualValidation(
+    @SerialName("enabled") val enabled: Boolean = false,
+    @SerialName("fields") val fields: List<String>? = null,
+)
+
+@Serializable
+data class TicketValidateRequest(
+    @SerialName("coordinates") val coordinates: TicketValidateCoordinates? = null,
+    @SerialName("runsNr") val runsNr: Int? = null,
+    @SerialName("integratedProgressive") val integratedProgressive: Int? = null,
+    @SerialName("qrCodeValidationValue") val qrCodeValidationValue: String? = null,
+    @SerialName("textValidationValue") val textValidationValue: String? = null,
+    @SerialName("beaconValidationValue") val beaconValidationValue: String? = null,
+)
+
+@Serializable
+data class TicketValidateCoordinates(
+    @SerialName("latitude") val latitude: Double,
+    @SerialName("longitude") val longitude: Double,
 )

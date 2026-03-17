@@ -5,6 +5,7 @@ import android.net.Uri
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import dagger.hilt.android.lifecycle.HiltViewModel
+import it.atm.app.data.local.ProfileDataStore
 import it.atm.app.data.local.SessionJson
 import it.atm.app.data.local.AuthBlock
 import it.atm.app.data.local.SessionSubscription
@@ -38,7 +39,8 @@ class HomeViewModel @Inject constructor(
     private val tokenDataStore: TokenDataStore,
     private val subscriptionDataStore: SubscriptionDataStore,
     private val accountManager: AccountManager,
-    private val restClient: AtmRestClient
+    private val restClient: AtmRestClient,
+    private val profileDataStore: ProfileDataStore
 ) : ViewModel() {
 
     val accounts = accountManager.accounts
@@ -77,6 +79,7 @@ class HomeViewModel @Inject constructor(
 
     init {
         loadCachedSubscriptions()
+        loadCachedTickets()
         loadProfile()
         refreshTickets()
 
@@ -102,6 +105,17 @@ class HomeViewModel @Inject constructor(
         }
     }
 
+    private fun loadCachedTickets() {
+        viewModelScope.launch {
+            try {
+                ticketRepository.getCachedTickets().collect { cached ->
+                    _tickets.value = cached
+                }
+            } catch (_: Exception) {
+            }
+        }
+    }
+
     private suspend fun fetchAndApplyProfile() {
         val token = tokenDataStore.getAccessToken() ?: return
         val deviceUid = tokenDataStore.getDeviceUid()
@@ -121,15 +135,17 @@ class HomeViewModel @Inject constructor(
         if (accountManager.getActiveAccount()?.id == AccountManager.PENDING_ACCOUNT_ID
             && profile.email.isNotBlank()) {
             accountManager.finalizePendingAccount(profile.email, profile.name, profile.surname)
-        } else {
-            accountManager.updateActiveAccount {
-                it.copy(name = profile.name, surname = profile.surname, email = profile.email)
-            }
         }
+        profileDataStore.saveProfile(profile)
     }
 
     private fun loadProfile(showSyncing: Boolean = true) {
         viewModelScope.launch {
+            val cached = profileDataStore.getCachedProfile()
+            if (cached.name.isNotBlank() || cached.email.isNotBlank()) {
+                _profile.value = cached
+            }
+
             if (showSyncing) _isProfileSyncing.value = true
             try {
                 fetchAndApplyProfile()
@@ -205,8 +221,7 @@ class HomeViewModel @Inject constructor(
                 val token = tokenDataStore.getAccessToken() ?: return@launch
                 val deviceUid = tokenDataStore.getDeviceUid()
                 ticketRepository.fetchTickets(token, deviceUid)
-                    .onSuccess { _tickets.value = it }
-                    .onFailure { AppLogger.w("REST","Ticket fetch failed: %s", it.message) }
+                    .onFailure { AppLogger.w("REST", "Ticket fetch failed: %s", it.message) }
             } catch (_: Exception) {
             } finally {
                 _isTicketsLoading.value = false

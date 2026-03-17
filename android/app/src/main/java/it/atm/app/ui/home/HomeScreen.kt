@@ -67,12 +67,14 @@ import it.atm.app.ui.ticket.TicketQrViewModel
 import it.atm.app.auth.AccountManager
 import net.openid.appauth.AuthorizationException
 import net.openid.appauth.AuthorizationResponse
+import androidx.core.net.toUri
 
 private const val BUY_TICKETS_URL = "https://giromilano.atm.it/#!/shopping"
 
 @Composable
 fun HomeScreen(
     viewModel: HomeViewModel,
+    isOffline: Boolean,
     onImportFromDevice: () -> Unit,
     onLogout: () -> Unit
 ) {
@@ -165,19 +167,27 @@ fun HomeScreen(
             floatingActionButton = {
                 when (selectedTab) {
                     0 -> ExtendedFloatingActionButton(
-                        onClick = onImportFromDevice,
+                        onClick = { if (!isOffline) onImportFromDevice() },
                         icon = { Icon(Icons.Rounded.Add, contentDescription = null) },
                         text = { Text("Add Subscription") },
-                        shape = MaterialTheme.shapes.extraLarge
+                        shape = MaterialTheme.shapes.extraLarge,
+                        containerColor = if (isOffline) MaterialTheme.colorScheme.surfaceContainerHighest
+                            else MaterialTheme.colorScheme.primaryContainer,
+                        contentColor = if (isOffline) MaterialTheme.colorScheme.onSurface.copy(alpha = 0.38f)
+                            else MaterialTheme.colorScheme.onPrimaryContainer
                     )
                     1 -> ExtendedFloatingActionButton(
-                        onClick = {
+                        onClick = { if (!isOffline) {
                             CustomTabsIntent.Builder().build()
-                                .launchUrl(context, Uri.parse(BUY_TICKETS_URL))
-                        },
+                                .launchUrl(context, BUY_TICKETS_URL.toUri())
+                        } },
                         icon = { Icon(Icons.Outlined.ShoppingCart, contentDescription = null) },
                         text = { Text("Buy Tickets") },
-                        shape = MaterialTheme.shapes.extraLarge
+                        shape = MaterialTheme.shapes.extraLarge,
+                        containerColor = if (isOffline) MaterialTheme.colorScheme.surfaceContainerHighest
+                            else MaterialTheme.colorScheme.primaryContainer,
+                        contentColor = if (isOffline) MaterialTheme.colorScheme.onSurface.copy(alpha = 0.38f)
+                            else MaterialTheme.colorScheme.onPrimaryContainer
                     )
                     2 -> ExtendedFloatingActionButton(
                         onClick = { exportFilePicker.launch("atm_session.json") },
@@ -193,6 +203,7 @@ fun HomeScreen(
                 0 -> SubscriptionsTab(
                     subscriptions = subscriptions,
                     isLoading = isLoading,
+                    isOffline = isOffline,
                     onRefresh = { viewModel.refresh() },
                     onSubscriptionClick = { index -> showQrForIndex = index },
                     modifier = Modifier.padding(paddingValues)
@@ -200,6 +211,7 @@ fun HomeScreen(
                 1 -> TicketsTab(
                     tickets = tickets,
                     isLoading = isTicketsLoading,
+                    isOffline = isOffline,
                     onRefresh = { viewModel.refreshTickets() },
                     onTicketClick = { ticket -> showTicketDetail = ticket },
                     modifier = Modifier.padding(paddingValues)
@@ -210,6 +222,7 @@ fun HomeScreen(
                     isUpdating = isProfileUpdating,
                     accounts = accounts,
                     activeAccountId = activeAccountId,
+                    isOffline = isOffline,
                     onUpdateProfile = { updated -> viewModel.updateProfile(updated) },
                     onLogout = { accountId -> viewModel.removeAccount(accountId) },
                     onSwitchAccount = { accountId -> viewModel.switchAccount(accountId) },
@@ -376,6 +389,7 @@ fun HomeScreen(
         AccountSwitcherPage(
             accounts = accounts.filter { it.id != AccountManager.PENDING_ACCOUNT_ID },
             activeAccountId = switcherActiveId,
+            isOffline = isOffline,
             onDismiss = { showAccountSwitcher = false },
             onLogout = { id -> showAccountSwitcher = false; viewModel.removeAccount(id) },
             onSwitchAccount = { id -> showAccountSwitcher = false; viewModel.switchAccount(id) },

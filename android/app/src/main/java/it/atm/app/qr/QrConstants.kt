@@ -30,6 +30,5 @@ object QrConstants {
     )
 
     val QR_IV: ByteArray = ByteArray(16) { 0xAE.toByte() }
-    const val REFRESH_INTERVAL_MS: Long = 25_000L
     const val KEY_COUNT: Int = 25
 }

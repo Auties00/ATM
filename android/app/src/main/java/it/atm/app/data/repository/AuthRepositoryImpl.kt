@@ -1,11 +1,14 @@
-package it.atm.app.auth
+package it.atm.app.data.repository
 
 import android.content.Context
-import android.net.Uri
+import androidx.core.net.toUri
 import dagger.hilt.android.qualifiers.ApplicationContext
+import it.atm.app.auth.AccountManager
+import it.atm.app.auth.AuthConstants
 import it.atm.app.data.local.TokenDataStore
 import it.atm.app.domain.model.AuthStatus
 import it.atm.app.domain.repository.AuthRepository
+import it.atm.app.util.AppLogger
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
@@ -17,8 +20,6 @@ import net.openid.appauth.AuthorizationService
 import net.openid.appauth.AuthorizationServiceConfiguration
 import net.openid.appauth.ResponseTypeValues
 import net.openid.appauth.TokenRequest
-import net.openid.appauth.TokenResponse
-import it.atm.app.util.AppLogger
 import java.security.SecureRandom
 import javax.inject.Inject
 import javax.inject.Singleton
@@ -41,12 +42,14 @@ class AuthRepositoryImpl @Inject constructor(
     private suspend fun discoverConfiguration(): AuthorizationServiceConfiguration =
         withContext(Dispatchers.IO) {
             serviceConfig?.let { return@withContext it }
-            AppLogger.d("AUTH","Discovering OIDC configuration")
-            val issuerUri = Uri.parse(AuthConstants.AUTH_ISSUER)
-            val config = suspendCoroutine<AuthorizationServiceConfiguration> { cont ->
+            AppLogger.d("AUTH", "Discovering OIDC configuration")
+            val issuerUri = AuthConstants.AUTH_ISSUER.toUri()
+            val config = suspendCoroutine { cont ->
                 AuthorizationServiceConfiguration.fetchFromIssuer(issuerUri) { config, ex ->
                     if (config != null) cont.resume(config)
-                    else cont.resumeWithException(ex ?: RuntimeException("Failed to fetch OIDC configuration"))
+                    else cont.resumeWithException(
+                        ex ?: RuntimeException("Failed to fetch OIDC configuration")
+                    )
                 }
             }
             serviceConfig = config
@@ -61,7 +64,7 @@ class AuthRepositoryImpl @Inject constructor(
             config,
             AuthConstants.CLIENT_ID,
             ResponseTypeValues.CODE,
-            Uri.parse(AuthConstants.REDIRECT_URI)
+            AuthConstants.REDIRECT_URI.toUri()
         )
             .setScope(AuthConstants.SCOPE)
             .setNonce(nonce)
@@ -72,14 +75,16 @@ class AuthRepositoryImpl @Inject constructor(
 
     override suspend fun exchangeCode(authResponse: AuthorizationResponse) {
         withContext(Dispatchers.IO) {
-            AppLogger.d("AUTH","Exchanging authorization code")
+            AppLogger.d("AUTH", "Exchanging authorization code")
             val authService = AuthorizationService(context)
             try {
                 val tokenRequest = authResponse.createTokenExchangeRequest()
-                val tokenResponse = suspendCoroutine<TokenResponse> { cont ->
+                val tokenResponse = suspendCoroutine { cont ->
                     authService.performTokenRequest(tokenRequest) { response, ex ->
                         if (response != null) cont.resume(response)
-                        else cont.resumeWithException(ex ?: RuntimeException("Token exchange failed"))
+                        else cont.resumeWithException(
+                            ex ?: RuntimeException("Token exchange failed")
+                        )
                     }
                 }
                 val accessToken = tokenResponse.accessToken
@@ -99,7 +104,7 @@ class AuthRepositoryImpl @Inject constructor(
                     tokenType = tokenType,
                     expiresAt = expiresAt
                 )
-                AppLogger.d("AUTH","Token exchange successful")
+                AppLogger.d("AUTH", "Token exchange successful")
                 _authStatus.value = AuthStatus.Authenticated(accessToken)
             } finally {
                 authService.dispose()
@@ -109,7 +114,7 @@ class AuthRepositoryImpl @Inject constructor(
 
     override suspend fun refreshAccessToken() {
         withContext(Dispatchers.IO) {
-            AppLogger.d("AUTH","Refreshing access token")
+            AppLogger.d("AUTH", "Refreshing access token")
             val refreshToken = tokenDataStore.getRefreshToken()
                 ?: throw RuntimeException("No refresh token available")
             val config = discoverConfiguration()
@@ -119,10 +124,12 @@ class AuthRepositoryImpl @Inject constructor(
                     .setGrantType("refresh_token")
                     .setRefreshToken(refreshToken)
                     .build()
-                val tokenResponse = suspendCoroutine<TokenResponse> { cont ->
+                val tokenResponse = suspendCoroutine { cont ->
                     authService.performTokenRequest(tokenRequest) { response, ex ->
                         if (response != null) cont.resume(response)
-                        else cont.resumeWithException(ex ?: RuntimeException("Token refresh failed"))
+                        else cont.resumeWithException(
+                            ex ?: RuntimeException("Token refresh failed")
+                        )
                     }
                 }
                 val accessToken = tokenResponse.accessToken
@@ -138,10 +145,10 @@ class AuthRepositoryImpl @Inject constructor(
                     tokenType = tokenType,
                     expiresAt = expiresAt
                 )
-                AppLogger.d("AUTH","Token refresh successful")
+                AppLogger.d("AUTH", "Token refresh successful")
                 _authStatus.value = AuthStatus.Authenticated(accessToken)
             } catch (e: Exception) {
-                AppLogger.w("AUTH","Token refresh failed: %s", e.message)
+                AppLogger.w("AUTH", "Token refresh failed: %s", e.message)
                 _authStatus.value = AuthStatus.NeedsLogin
                 throw e
             } finally {

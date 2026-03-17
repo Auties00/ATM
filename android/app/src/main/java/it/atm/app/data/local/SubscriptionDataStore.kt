@@ -42,7 +42,7 @@ class SubscriptionDataStore @Inject constructor(
         return subscriptionDao.getByAccount(accountId)
     }
 
-    suspend fun getLastSync(): String? {
+    fun getLastSync(): String? {
         return accountManager.getActiveAccount()?.lastSync
     }
 

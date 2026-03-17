@@ -140,6 +140,7 @@ fun AccountTab(
     isUpdating: Boolean,
     accounts: List<AccountEntity>,
     activeAccountId: String?,
+    isOffline: Boolean = false,
     onUpdateProfile: (UserProfile) -> Unit,
     onLogout: (accountId: String) -> Unit,
     onSwitchAccount: (accountId: String) -> Unit,
@@ -228,7 +229,7 @@ fun AccountTab(
 
         PullToRefreshBox(
             isRefreshing = pullRefreshing,
-            onRefresh = { pullRefreshing = true; onRefresh() },
+            onRefresh = { if (!isOffline) { pullRefreshing = true; onRefresh() } },
             modifier = Modifier.fillMaxSize()
         ) {
         Column(
@@ -691,6 +692,7 @@ private fun InitialsAvatar(initials: String, modifier: Modifier = Modifier) {
 fun AccountSwitcherPage(
     accounts: List<AccountEntity>,
     activeAccountId: String?,
+    isOffline: Boolean = false,
     onDismiss: () -> Unit,
     onLogout: (accountId: String) -> Unit,
     onSwitchAccount: (accountId: String) -> Unit,
@@ -806,6 +808,7 @@ fun AccountSwitcherPage(
             ) {
                 Button(
                     onClick = onAddAccount,
+                    enabled = !isOffline,
                     modifier = Modifier.fillMaxWidth().height(56.dp),
                     shape = MaterialTheme.shapes.large
                 ) {

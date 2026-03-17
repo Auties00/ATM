@@ -1,13 +1,13 @@
 package it.atm.app.auth
 
 object AuthConstants {
-    const val AUTH_ISSUER = "https://be.atm.it/idserver"
+    const val AUTH_ISSUER = "https://be.atm.it/IdServer/"
     const val CLIENT_ID = "atmmi"
     const val REDIRECT_URI = "it.atm.appmobile.auth:/oauthredirect"
     const val SCOPE = "offline_access"
 
     const val TICKETING_BASE = "https://be.atm.it/app.gateway/api/transport.ticketing/v5"
-    const val PASSES_BASE = "https://be.atm.it/app.gateway/api/transport.passes//"
+    const val PASSES_BASE = "https://be.atm.it/app.gateway/api/transport.passes/"
     const val ACCOUNT_URL = "https://be.atm.it/app.gateway/api/userservice/v1/Account"
     const val ACCOUNT_SYNC_URL = "https://be.atm.it/app.gateway/api/userservice/v1/Account/Sync"
 

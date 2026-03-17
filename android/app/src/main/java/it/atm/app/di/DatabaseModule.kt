@@ -10,6 +10,7 @@ import dagger.hilt.components.SingletonComponent
 import it.atm.app.data.local.db.AccountDao
 import it.atm.app.data.local.db.AtmDatabase
 import it.atm.app.data.local.db.SubscriptionDao
+import it.atm.app.data.local.db.TicketDao
 import javax.inject.Singleton
 
 @Module
@@ -28,4 +29,7 @@ object DatabaseModule {
 
     @Provides
     fun provideSubscriptionDao(database: AtmDatabase): SubscriptionDao = database.subscriptionDao()
+
+    @Provides
+    fun provideTicketDao(database: AtmDatabase): TicketDao = database.ticketDao()
 }

@@ -94,7 +94,7 @@ class AccountManager @Inject constructor(
         refreshCache()
     }
 
-    suspend fun switchTo(accountId: String) {
+    fun switchTo(accountId: String) {
         AppLogger.d("ACCOUNT","Switching to account id=%s", accountId)
         _activeAccountId.value = accountId
     }

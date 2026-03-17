@@ -8,19 +8,24 @@ import dagger.hilt.android.AndroidEntryPoint
 import it.atm.app.data.local.TokenDataStore
 import it.atm.app.ui.navigation.NavGraph
 import it.atm.app.ui.theme.AtmTheme
+import it.atm.app.util.ConnectivityObserver
 import javax.inject.Inject
 
 @AndroidEntryPoint
 class MainActivity : ComponentActivity() {
 
     @Inject lateinit var tokenDataStore: TokenDataStore
+    @Inject lateinit var connectivityObserver: ConnectivityObserver
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         enableEdgeToEdge()
         setContent {
             AtmTheme {
-                NavGraph(tokenDataStore = tokenDataStore)
+                NavGraph(
+                    tokenDataStore = tokenDataStore,
+                    connectivityObserver = connectivityObserver
+                )
             }
         }
     }

@@ -2,11 +2,11 @@
   "formatVersion": 1,
   "database": {
     "version": 1,
-    "identityHash": "635073258b84525e156e5e7f43f806f1",
+    "identityHash": "5d66ea3135cecae0c856c4f2e1cb2886",
     "entities": [
       {
         "tableName": "accounts",
-        "createSql": "CREATE TABLE IF NOT EXISTS `${TABLE_NAME}` (`id` TEXT NOT NULL, `name` TEXT NOT NULL, `surname` TEXT NOT NULL, `email` TEXT NOT NULL, `accessToken` TEXT, `refreshToken` TEXT, `tokenType` TEXT NOT NULL, `expiresAt` INTEGER NOT NULL, `deviceUid` TEXT NOT NULL, `onboardingComplete` INTEGER NOT NULL, `lastSync` TEXT, `qrSigType` INTEGER NOT NULL, `qrInitialKeyId` INTEGER NOT NULL, `qrCodeFormat` INTEGER NOT NULL, `qrSignatureKeysVTID` INTEGER NOT NULL, `activeNfcSubscriptionIndex` INTEGER NOT NULL, PRIMARY KEY(`id`))",
+        "createSql": "CREATE TABLE IF NOT EXISTS `${TABLE_NAME}` (`id` TEXT NOT NULL, `name` TEXT NOT NULL, `surname` TEXT NOT NULL, `email` TEXT NOT NULL, `accessToken` TEXT, `refreshToken` TEXT, `tokenType` TEXT NOT NULL, `expiresAt` INTEGER NOT NULL, `deviceUid` TEXT NOT NULL, `confirmedEmail` INTEGER NOT NULL, `phone` TEXT NOT NULL, `phonePrefix` TEXT NOT NULL, `birthDate` TEXT, `imagePath` TEXT, `onboardingComplete` INTEGER NOT NULL, `lastSync` TEXT, `qrSigType` INTEGER NOT NULL, `qrInitialKeyId` INTEGER NOT NULL, `qrCodeFormat` INTEGER NOT NULL, `qrSignatureKeysVTID` INTEGER NOT NULL, `activeNfcSubscriptionIndex` INTEGER NOT NULL, PRIMARY KEY(`id`))",
         "fields": [
           {
             "fieldPath": "id",
@@ -61,6 +61,36 @@
             "columnName": "deviceUid",
             "affinity": "TEXT",
             "notNull": true
+          },
+          {
+            "fieldPath": "confirmedEmail",
+            "columnName": "confirmedEmail",
+            "affinity": "INTEGER",
+            "notNull": true
+          },
+          {
+            "fieldPath": "phone",
+            "columnName": "phone",
+            "affinity": "TEXT",
+            "notNull": true
+          },
+          {
+            "fieldPath": "phonePrefix",
+            "columnName": "phonePrefix",
+            "affinity": "TEXT",
+            "notNull": true
+          },
+          {
+            "fieldPath": "birthDate",
+            "columnName": "birthDate",
+            "affinity": "TEXT",
+            "notNull": false
+          },
+          {
+            "fieldPath": "imagePath",
+            "columnName": "imagePath",
+            "affinity": "TEXT",
+            "notNull": false
           },
           {
             "fieldPath": "onboardingComplete",
@@ -256,7 +286,7 @@
     "views": [],
     "setupQueries": [
       "CREATE TABLE IF NOT EXISTS room_master_table (id INTEGER PRIMARY KEY,identity_hash TEXT)",
-      "INSERT OR REPLACE INTO room_master_table (id,identity_hash) VALUES(42, '635073258b84525e156e5e7f43f806f1')"
+      "INSERT OR REPLACE INTO room_master_table (id,identity_hash) VALUES(42, '5d66ea3135cecae0c856c4f2e1cb2886')"
     ]
   }
 }

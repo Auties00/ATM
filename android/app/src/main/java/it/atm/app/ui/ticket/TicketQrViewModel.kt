@@ -11,6 +11,7 @@ import it.atm.app.data.local.TokenDataStore
 import it.atm.app.data.remote.rest.Ticket
 import it.atm.app.data.remote.rest.TicketQrCodeResponse
 import it.atm.app.data.remote.rest.TicketStatus
+import it.atm.app.data.remote.rest.TicketValidateCoordinates
 import it.atm.app.domain.repository.TicketRepository
 import it.atm.app.qr.BarcodeEncoder
 
@@ -98,7 +99,7 @@ class TicketQrViewModel @Inject constructor(
         _qrBitmap.value = null
     }
 
-    fun validate() {
+    fun validate(latitude: Double? = null, longitude: Double? = null) {
         val ticket = currentTicket ?: return
         viewModelScope.launch {
             _isValidating.value = true
@@ -106,7 +107,14 @@ class TicketQrViewModel @Inject constructor(
                 val token = tokenDataStore.getAccessToken()
                     ?: throw RuntimeException("Not authenticated")
                 val deviceUid = tokenDataStore.getDeviceUid()
-                ticketRepository.validateTicket(token, deviceUid, ticket.ticketId).fold(
+                val coordinates = if (latitude != null && longitude != null
+                    && latitude.isFinite() && longitude.isFinite()) {
+                    TicketValidateCoordinates(latitude, longitude)
+                } else null
+                ticketRepository.validateTicket(
+                    token, deviceUid, ticket.ticketId,
+                    coordinates = coordinates
+                ).fold(
                     onSuccess = {
                         _canValidate.value = false
                         _statusLabel.value = "Active"
